@@ -14,10 +14,11 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
+out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -31,3 +32,35 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+*.log
+logs/
+
+### OS files ###
+.DS_Store
+Thumbs.db
+
+### Environment variables ###
+.env
+.env.*
+*.env
+
+### Runtime files ###
+*.pid
+*.seed
+*.pid.lock
+
+### Coverage ###
+coverage/
+jacoco.exec
+
+### Temporary files ###
+*.tmp
+*.swp
+*.swo
+*~
+
+### Local Spring configs (optional) ###
+application-local.yml
+application-local.properties
