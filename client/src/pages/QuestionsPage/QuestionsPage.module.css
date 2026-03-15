@@ -1,0 +1,134 @@
+.page {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding: 32px 24px;
+}
+
+.inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #6c6c6c;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.newBtn {
+  padding: 8px 18px;
+  background: #00b8a3;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  font-size: 0.95rem;
+  color: #6c6c6c;
+}
+
+.errorState {
+  color: #dc2626;
+  font-size: 0.875rem;
+  padding: 12px 0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 32px 0;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table thead th:first-child {
+  border-radius: 4px 0 0 0;
+}
+
+.table thead th:last-child {
+  border-radius: 0 4px 0 0;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: #fafafa;
+}
+
+.table tbody td {
+  padding: 12px 12px;
+  font-size: 0.875rem;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.qLink {
+  color: #0075ff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.qLink:hover {
+  text-decoration: underline;
+}
+
+.topicChip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
