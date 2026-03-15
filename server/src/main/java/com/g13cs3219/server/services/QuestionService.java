@@ -1,9 +1,9 @@
-package com.g13cs3219.server.service;
+package com.g13cs3219.server.services;
 
 import com.g13cs3219.server.dto.QuestionRequest;
 import com.g13cs3219.server.dto.QuestionResponse;
 import com.g13cs3219.server.model.Question;
-import com.g13cs3219.server.repository.QuestionRepository;
+import com.g13cs3219.server.repositories.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

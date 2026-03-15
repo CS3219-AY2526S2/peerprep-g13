@@ -14,16 +14,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())  // disable CSRF
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/users/auth/**", "/actuator/health").permitAll()
-                    .anyRequest().authenticated()
-            )
-            .httpBasic(basic -> {});  // lambda is required, even if empty
-        return http.build();
-    }
 }
