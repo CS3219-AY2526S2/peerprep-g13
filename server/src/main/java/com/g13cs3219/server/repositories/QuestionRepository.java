@@ -1,4 +1,4 @@
-package com.g13cs3219.server.repository;
+package com.g13cs3219.server.repositories;
 
 import com.g13cs3219.server.model.Question;
 import org.springframework.data.jpa.repository.JpaRepository;

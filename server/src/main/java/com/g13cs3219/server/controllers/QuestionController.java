@@ -1,13 +1,12 @@
-package com.g13cs3219.server.controller;
+package com.g13cs3219.server.controllers;
 
 import com.g13cs3219.server.dto.MatchRequest;
 import com.g13cs3219.server.dto.QuestionRequest;
 import com.g13cs3219.server.dto.QuestionResponse;
-import com.g13cs3219.server.service.QuestionService;
+import com.g13cs3219.server.services.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
