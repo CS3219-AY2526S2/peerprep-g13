@@ -86,7 +86,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .message("Login Successful")
                 .accessToken(token)
-                .useId(userEntity.getUserId())
+                .userId(userEntity.getUserId())
                 .build();
     }
 
