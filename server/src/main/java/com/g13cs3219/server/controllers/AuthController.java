@@ -14,7 +14,7 @@ import com.g13cs3219.server.services.AuthService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/users/auth")
+@RequestMapping("/user/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
