@@ -73,6 +73,6 @@ public class QuestionController {
 
     private Long getCallerUserId() {
         // wait for JWT integration
-        return 0L;
+        return null;
     }
 }

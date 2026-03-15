@@ -22,7 +22,7 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
         try {
             return objectMapper.writeValueAsString(attribute);
         } catch (JsonProcessingException e) {
-            return "[]";
+            throw new RuntimeException("Failed to serialize List<String> to JSON", e);
         }
     }
 
@@ -34,7 +34,7 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
         try {
             return objectMapper.readValue(dbData, new TypeReference<List<String>>() {});
         } catch (JsonProcessingException e) {
-            return new ArrayList<>();
+            throw new RuntimeException("Failed to deserialize JSON to List<String>", e);
         }
     }
 }

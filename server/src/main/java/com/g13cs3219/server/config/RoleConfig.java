@@ -23,7 +23,7 @@ public class RoleConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET,  "/questions",     "/questions/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/questions/match").permitAll()
-                        // .anyRequest().authenticated() (change to this when JWWT integrate)
+                        // .anyRequest().authenticated() (change to this when JWT integrate)
                         .anyRequest().permitAll()
                 );
         return http.build();

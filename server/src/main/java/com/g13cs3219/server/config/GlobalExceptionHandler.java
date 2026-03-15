@@ -6,7 +6,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,7 +15,7 @@ import java.util.Map;
  * { "timestamp": "...", "status": 404, "error": "Not Found", "message": "..." }
  */
 @RestControllerAdvice
-public class ExceptionMsg {
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, Object>> handleResponseStatus(ResponseStatusException ex) {
@@ -37,6 +36,10 @@ public class ExceptionMsg {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", status);
+        HttpStatus httpStatus = HttpStatus.resolve(status);
+        if (httpStatus != null) {
+            body.put("error", httpStatus.getReasonPhrase());
+        }
         body.put("message", message);
         return ResponseEntity.status(status).body(body);
     }

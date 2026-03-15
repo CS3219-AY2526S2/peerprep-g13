@@ -26,7 +26,7 @@ public class Question {
     @Column(name = "question_id")
     private Long questionId;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false) //unique = true
     private String title;
 
     @Column(nullable = false)

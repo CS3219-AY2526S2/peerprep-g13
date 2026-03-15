@@ -11,11 +11,29 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service layer for the Question Service.
+ *
+ * Handles all business logic for managing the question repository,
+ * including CRUD operations and question matching for the Matching Service.
+ * All queries are scoped to active questions only (isActive = true).
+ */
 @Service
 @RequiredArgsConstructor
 public class QuestionService {
 
     private final QuestionRepository questionRepository;
+    /**
+     * Retrieves all active questions, with optional filtering by topic and/or difficulty.
+     *
+     * - If both topic and difficulty are provided, filters by both.
+     * - If only one is provided, filters by that field only.
+     * - If neither is provided, returns all active questions.
+     *
+     * @param topic      optional topic filter (case-insensitive), e.g. "Arrays"
+     * @param difficulty optional difficulty filter (case-insensitive), e.g. "easy"
+     * @return list of matching active questions as response DTOs
+     */
     public List<QuestionResponse> getQuestions(String topic, String difficulty) {
         List<Question> questions;
 
@@ -36,14 +54,32 @@ public class QuestionService {
                 .map(QuestionResponse::from)
                 .collect(Collectors.toList());
     }
-
+    /**
+     * Retrieves a single active question by its ID.
+     *
+     * @param id the question's primary key
+     * @return the question as a response DTO
+     * @throws ResponseStatusException 404 if no active question exists with the given ID
+     */
     public QuestionResponse getQuestionById(Long id) {
         Question question = questionRepository.findByQuestionIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Question not found with id: " + id));
         return QuestionResponse.from(question);
     }
-
+    /**
+     * Creates a new question and persists it to the database.
+     *
+     * Validates that all required fields (title, topic, difficulty, prompt) are present
+     * and that difficulty is one of: easy, medium, hard.
+     * Also checks that no active question with the same title already exists.
+     *
+     * @param req       the request body containing question details
+     * @param createdBy the userId of the admin performing the action
+     * @return the generated questionId of the newly created question
+     * @throws ResponseStatusException 400 if required fields are missing or difficulty is invalid
+     * @throws ResponseStatusException 409 if a question with the same title already exists
+     */
     public Long createQuestion(QuestionRequest req, Long createdBy) {
         validateRequired(req);
         validateDifficulty(req.getDifficulty());
@@ -82,12 +118,12 @@ public class QuestionService {
             }
             question.setTitle(req.getTitle());
         }
-        if (req.getTopic()      != null) question.setTopic(req.getTopic());
+        if (req.getTopic()      != null && !req.getTopic().isBlank())  question.setTopic(req.getTopic());
         if (req.getDifficulty() != null) {
             validateDifficulty(req.getDifficulty());
             question.setDifficulty(req.getDifficulty().toLowerCase());
         }
-        if (req.getPrompt()      != null) question.setPrompt(req.getPrompt());
+        if (req.getPrompt()      != null && !req.getPrompt().isBlank())  question.setPrompt(req.getPrompt());
         if (req.getExample()     != null) question.setExample(req.getExample());
         if (req.getConstraints() != null) question.setConstraints(req.getConstraints());
         if (req.getImageUrls()   != null) question.setImageUrls(req.getImageUrls());
@@ -95,7 +131,16 @@ public class QuestionService {
         question.setUpdatedBy(updatedBy);
         questionRepository.save(question);
     }
-
+    /**
+     * Soft deletes a question by setting its isActive flag to false.
+     *
+     * The record is retained in the database to preserve referential integrity
+     * with the History table
+     * Soft-deleted questions are excluded from all other queries.
+     *
+     * @param id the ID of the question to delete
+     * @throws ResponseStatusException 404 if no active question exists with the given ID
+     */
     public void deleteQuestion(Long id) {
         Question question = questionRepository.findByQuestionIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -109,15 +154,24 @@ public class QuestionService {
      * the given topic + difficulty.
      */
     public QuestionResponse matchQuestion(String topic, String difficulty) {
+        String normalizedTopic = (topic == null) ? null : topic.trim();
+        if (normalizedTopic == null || normalizedTopic.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "topic is required.");
+        }
         validateDifficulty(difficulty);
-
-        return questionRepository.findRandomByTopicAndDifficulty(topic, difficulty)
+        return questionRepository.findRandomByTopicAndDifficulty(normalizedTopic, difficulty)
                 .map(QuestionResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "No question found for topic='" + topic + "' difficulty='" + difficulty + "'"));
+                        "No question found for topic='" + normalizedTopic + "' difficulty='" + difficulty + "'"));
     }
-
+    /**
+     * Validates that all required fields for creating a question are present and non-blank.
+     *
+     * @param req the question creation request
+     * @throws ResponseStatusException 400 if any required field is missing
+     */
     private void validateRequired(QuestionRequest req) {
         if (req.getTitle()      == null || req.getTitle().isBlank()  ||
                 req.getTopic()      == null || req.getTopic().isBlank()  ||
@@ -127,8 +181,17 @@ public class QuestionService {
                     "title, topic, difficulty and prompt are required.");
         }
     }
-
+    /**
+     * Validates that the difficulty value is one of the accepted values.
+     *
+     * @param difficulty the difficulty string to validate
+     * @throws ResponseStatusException 400 if the value is not easy, medium, or hard
+     */
     private void validateDifficulty(String difficulty) {
+        if (difficulty == null || difficulty.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "difficulty is required and must be one of: easy, medium, hard");
+        }
         if (!List.of("easy", "medium", "hard").contains(difficulty.toLowerCase())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "difficulty must be one of: easy, medium, hard");
