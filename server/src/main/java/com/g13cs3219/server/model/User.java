@@ -61,7 +61,7 @@ public class User {
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private String createdAt;
+    private Date createdAt;
 
     @Column(name = "updated_by")
     private int updatedBy;
