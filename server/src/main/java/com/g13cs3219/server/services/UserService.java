@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 
 import com.g13cs3219.server.dto.requests.UpdateRoleRequest;
 import com.g13cs3219.server.dto.responses.UpdateRoleResponse;
-import com.g13cs3219.server.exceptions.InvalidUserIDException;
+import com.g13cs3219.server.exceptions.EmailAlreadyExistsException;
 import com.g13cs3219.server.exceptions.UserNotFoundException;
 import com.g13cs3219.server.model.Role;
 import com.g13cs3219.server.model.User;
@@ -22,17 +22,17 @@ public class UserService {
     private final PasswordService passwordService;
 
     /**
-     * Promotes a user to a higher role. Only accessible by admins.
+     * Updates the role of a target user. Only admins can perform this action.
      *
-     * @param targetId the ID of the user to be promoted
-     * @param request the request body containing the promotion reason
-     * @return a response indicating the success of the operation
-     * @throws InvalidUserIDException if the user ID is invalid
-     * @throws UserNotFoundException if the user with the given ID does not exist
-     * @throws AccessDeniedException if the password provided does not match the user's password
+     * @param targetId the ID of the user whose role is to be updated
+     * @param request  the request containing the admin's ID, password, and the new role
+     * @return a response containing the new role of the target user
      */
     @Transactional
     public UpdateRoleResponse updateRole(Long targetId, UpdateRoleRequest request) {
+        // Validate the request
+        UpdateRoleRequest.validateRequest(request);
+
         // Get the admin and target user
         Long adminId = request.getAdminId();
         User admin = getUserById(adminId);
@@ -86,14 +86,14 @@ public class UserService {
     }
 
     /**
-     * Checks if a user with the given email exists.
+     * Checks if a user with the given email already exists.
      *
      * @param email the email to check for existence
-     * @throws UserNotFoundException if no user with the given email exists
+     * @throws EmailAlreadyExistsException if no user with the given email exists
      */
     public void checkUserExistsByEmail(String email) {
-        if (!userRepository.existsByEmail(email)) {
-            throw new UserNotFoundException();
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException(email);
         }
     }
 }
