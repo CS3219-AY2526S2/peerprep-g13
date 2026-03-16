@@ -85,7 +85,9 @@ export default function QuestionsPage() {
                       </Link>
                     </td>
                     <td>
-                      <span className={styles.topicChip}>{q.topic}</span>
+                      {(q.topics ?? (q.topic ? [q.topic] : [])).map((t) => (
+                        <span key={t} className={styles.topicChip}>{t}</span>
+                      ))}
                     </td>
                     <td>
                       <DifficultyBadge difficulty={q.difficulty} />

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { MultiSelect } from "@mantine/core";
 import { TOPICS, DIFFICULTIES } from "./constants";
 import DynamicListField from "./DynamicListField";
 import styles from "./QuestionForm.module.css";
 
 const EMPTY_FORM = {
   title: "",
-  topic: "",
+  topics: [],
   difficulty: "",
   prompt: "",
   examples: [],
@@ -28,7 +29,7 @@ export default function QuestionForm({
     if (initialData) {
       setForm({
         title: initialData.title || "",
-        topic: initialData.topic || "",
+        topics: initialData.topics ?? (initialData.topic ? [initialData.topic] : []),
         difficulty: initialData.difficulty || "",
         prompt: initialData.prompt || "",
         examples: initialData.examples || [],
@@ -49,6 +50,10 @@ export default function QuestionForm({
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    if (form.topics.length === 0) {
+      setError("Please select at least one topic.");
+      return;
+    }
     setSubmitting(true);
     try {
       const cleaned = {
@@ -86,24 +91,23 @@ export default function QuestionForm({
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label} htmlFor="topic">
-          Topic
-        </label>
-        <select
-          id="topic"
-          name="topic"
-          className={styles.select}
-          value={form.topic}
-          onChange={handleChange}
+        <MultiSelect
+          label={<span className={styles.label}>Topics</span>}
+          data={TOPICS}
+          value={form.topics}
+          onChange={(val) => setForm((prev) => ({ ...prev, topics: val }))}
+          searchable
+          placeholder={form.topics.length === 0 ? "Select topics…" : ""}
           required
-        >
-          <option value="">Select a topic</option>
-          {TOPICS.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+          styles={{
+            input: {
+              border: "1px solid #e5e7eb",
+              borderRadius: 6,
+              fontSize: "0.875rem",
+              color: "#374151",
+            },
+          }}
+        />
       </div>
 
       <div className={styles.fieldGroup}>

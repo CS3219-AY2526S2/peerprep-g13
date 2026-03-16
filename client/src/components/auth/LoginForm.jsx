@@ -26,6 +26,17 @@ export default function LoginForm({ setIsLoginMode }) {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErr("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setErr("Password must be at least 8 characters.");
+      return;
+    }
+
     try {
       await login(email, password);
       navigate("/dashboard");

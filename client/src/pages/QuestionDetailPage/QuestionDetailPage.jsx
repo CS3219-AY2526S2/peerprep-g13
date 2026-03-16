@@ -75,7 +75,9 @@ export default function QuestionDetailPage() {
           <div className={styles.titleRow}>
             <h1 className={styles.title}>{question.title}</h1>
             <DifficultyBadge difficulty={question.difficulty} />
-            <span className={styles.topicChip}>{question.topic}</span>
+            {(question.topics ?? (question.topic ? [question.topic] : [])).map((t) => (
+              <span key={t} className={styles.topicChip}>{t}</span>
+            ))}
           </div>
 
           {isQuestionManager && (

@@ -48,9 +48,8 @@ export default function ContextProvider({ children }) {
     await returnDashboard();
   }
 
-  async function register(name, username, email, password) {
+  async function register(username, email, password) {
     await userApi.register({
-      Name: name,
       username,
       email,
       password,

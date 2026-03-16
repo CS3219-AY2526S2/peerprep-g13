@@ -14,7 +14,6 @@ export default function RegisterForm({ setIsLoginMode }) {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,14 +25,25 @@ export default function RegisterForm({ setIsLoginMode }) {
     e.preventDefault();
     setErr("");
 
-    if (!name || !username || !email || !password) {
-      setErr("Please fill in name, username, email, and password.");
+    if (!username || !email || !password) {
+      setErr("Please fill in username, email, and password.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErr("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setErr("Password must be at least 8 characters.");
       return;
     }
 
     setLoading(true);
     try {
-      await register(name, username, email, password);
+      await register(username, email, password);
       navigate("/dashboard");
     } catch (e2) {
       const msg =
@@ -50,16 +60,6 @@ export default function RegisterForm({ setIsLoginMode }) {
     <div className="register-form">
       <div className="form-container">
         <form onSubmit={handleRegister}>
-          <TextInput
-            placeholder="your name"
-            label="Name"
-            size="md"
-            value={name}
-            onChange={(event) => setName(event.currentTarget.value)}
-          />
-
-          <Space h="md" />
-
           <TextInput
             placeholder="username"
             label="Username"

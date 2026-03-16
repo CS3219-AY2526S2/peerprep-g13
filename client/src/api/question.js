@@ -3,19 +3,26 @@ import api from "./axios";
 // Normalize server response fields to client field names:
 //   questionId -> id
 //   example    -> examples
+//   topic      -> topics (array)
 function normalizeQuestion(q) {
   return {
     ...q,
     id: q.questionId ?? q.id,
     examples: q.example ?? q.examples ?? [],
+    topics: q.topics ?? (q.topic ? [q.topic] : []),
   };
 }
 
 // Map client form fields back to server field names before sending:
 //   examples -> example
+//   topics   -> topics (array) + topic (first element, for backward compat)
 function toServerBody(body) {
-  const { examples, ...rest } = body;
+  const { examples, topics, ...rest } = body;
   if (examples !== undefined) rest.example = examples;
+  if (topics !== undefined) {
+    rest.topics = topics;
+    if (topics.length > 0) rest.topic = topics[0];
+  }
   return rest;
 }
 
