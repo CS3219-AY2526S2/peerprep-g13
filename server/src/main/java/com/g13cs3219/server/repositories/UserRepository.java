@@ -20,7 +20,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUserId(Long userId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE User u SET u.role = :role WHERE u = :user")
     void updateUserRole(@Param("user") User user, @Param("role") Role role);
 }
