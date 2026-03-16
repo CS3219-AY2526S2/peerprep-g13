@@ -1,4 +1,4 @@
-package com.g13cs3219.server.dto;
+package com.g13cs3219.server.dto.requests;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AuthResponse {
-    private String message;
-    private String accessToken;
-    private Long userId;
+public class UpdateRoleRequest {
+    private Long adminId;
+    private String password;
+    private String newRole;
 }

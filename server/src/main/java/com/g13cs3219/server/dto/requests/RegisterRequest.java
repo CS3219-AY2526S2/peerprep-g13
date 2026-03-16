@@ -1,4 +1,4 @@
-package com.g13cs3219.server.dto;
+package com.g13cs3219.server.dto.requests;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LoginRequest {
+public class RegisterRequest {
+    private Long userId;
+    private String username;
     private String email;
     private String password;
 }
