@@ -1,7 +1,7 @@
 package com.g13cs3219.server.services;
 
-import com.g13cs3219.server.dto.QuestionRequest;
-import com.g13cs3219.server.dto.QuestionResponse;
+import com.g13cs3219.server.dto.requests.QuestionRequest;
+import com.g13cs3219.server.dto.responses.QuestionResponse;
 import com.g13cs3219.server.model.Question;
 import com.g13cs3219.server.repositories.QuestionRepository;
 import lombok.RequiredArgsConstructor;
