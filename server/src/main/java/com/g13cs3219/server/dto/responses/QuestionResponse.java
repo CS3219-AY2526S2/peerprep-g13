@@ -1,4 +1,4 @@
-package com.g13cs3219.server.dto;
+package com.g13cs3219.server.dto.responses;
 
 import com.g13cs3219.server.model.Question;
 import lombok.Data;

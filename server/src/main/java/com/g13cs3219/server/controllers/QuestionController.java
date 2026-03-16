@@ -1,8 +1,8 @@
 package com.g13cs3219.server.controllers;
 
-import com.g13cs3219.server.dto.MatchRequest;
-import com.g13cs3219.server.dto.QuestionRequest;
-import com.g13cs3219.server.dto.QuestionResponse;
+import com.g13cs3219.server.dto.requests.MatchRequest;
+import com.g13cs3219.server.dto.requests.QuestionRequest;
+import com.g13cs3219.server.dto.responses.QuestionResponse;
 import com.g13cs3219.server.services.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

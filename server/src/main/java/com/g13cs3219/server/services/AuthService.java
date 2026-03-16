@@ -1,17 +1,12 @@
 package com.g13cs3219.server.services;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.g13cs3219.server.dto.AuthResponse;
-import com.g13cs3219.server.dto.LoginRequest;
-import com.g13cs3219.server.dto.User;
-import com.g13cs3219.server.exceptions.EmailAlreadyExistsException;
-import com.g13cs3219.server.exceptions.EmptyArgumentException;
-import com.g13cs3219.server.exceptions.InvalidCredentialsException;
-import com.g13cs3219.server.exceptions.UserNotFoundException;
-import com.g13cs3219.server.mapper.Mapper;
-import com.g13cs3219.server.model.UserEntity;
+import com.g13cs3219.server.dto.responses.LoginResponse;
+import com.g13cs3219.server.dto.requests.LoginRequest;
+import com.g13cs3219.server.dto.requests.RegisterRequest;
+import com.g13cs3219.server.dto.responses.RegisterResponse;
+import com.g13cs3219.server.model.User;
 import com.g13cs3219.server.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,79 +16,58 @@ import lombok.RequiredArgsConstructor;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final Mapper<UserEntity, User> userMapper;
-    private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
     private final JwtService jwtService;
+    private final PasswordService passwordService;
 
     /**
      * Registers a new user. Returns the ID of the newly registered user.
      *
-     * @param user the register data from the user
+     * @param request the register data from the user
      * @return the ID of the newly registered user
-     * @throws EmptyArgumentException 400 if either the email or the password is missing
-     * @throws EmailAlreadyExistsException 400 if there is an account with the same email in the database
      */
-    public Long register(User user) {
-        // Validate input
-        if (user.getEmail() == null || user.getPassword() == null) {
-            throw new EmptyArgumentException();
-        }
+    public RegisterResponse register(RegisterRequest request) {
+        // Validate the request body
+        RegisterRequest.validate(request);
 
         // Encode the password before saving
-        user.setPassword(encodePassword(user.getPassword()));
+        String encodedPassword = passwordService.encodePassword(request.getPassword());
 
         // Check if email already exists
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new EmailAlreadyExistsException(user.getEmail());
-        }
+        userService.checkUserExistsByEmail(request.getEmail());
 
-        // Map given dto to entity
-        UserEntity userEntity = userMapper.toEntity(user);
+        // Build a new user with input fields
+        User user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .encodedPassword(encodedPassword)
+                .build();
 
-        UserEntity savedUserEntity = userRepository.save(userEntity);
+        // Save the new user to the database
+        User registeredUser = userRepository.save(user);
 
-        // Map saved entity to dto
-        User registeredUser = userMapper.toDto(savedUserEntity);
-        return registeredUser.getUserId();
+        return RegisterResponse.buildResponse(registeredUser.getUserId());
     }
 
     /**
-     * Authenticates a user and returns an AuthResponse containing a JWT token if successful.
+     * Authenticates a user and returns a response containing a JWT token if successful.
      *
      * @param request the login data from the user
-     * @return an AuthResponse containing a JWT token if the login is successful
-     * @throws EmptyArgumentException 400 if either the email or the password is missing
-     * @throws UserNotFoundException 404 if not exist an account with the given email
-     * @throws InvalidCredentialsException 401 if either the email or the password given is not correct
+     * @return a response containing a JWT token if authentication is successful
      */
-    public AuthResponse login(LoginRequest request) {
-        // Validate input
-        if (request.getEmail() == null || request.getPassword() == null) {
-            throw new EmptyArgumentException();
-        }
+    public LoginResponse login(LoginRequest request) {
+        // Validate the request body
+        LoginRequest.validate(request);
 
-        UserEntity userEntity = userRepository
-                .findByEmail(request.getEmail())
-                .orElseThrow(() -> new UserNotFoundException(request.getEmail()));
+        // Get the user by email
+        User user = userService.getUserByEmail(request.getEmail());
 
-        // Check if password matches
-        if (!passwordEncoder.matches(request.getPassword(), userEntity.getEncodedPassword())) {
-            throw new InvalidCredentialsException();
-        }
+        // Verify the password
+        passwordService.verifyPassword(user, request.getPassword());
 
         // Generate JWT token
         String token = jwtService.generateToken(request.getEmail());
-        return AuthResponse.builder()
-                .message("Login Successful")
-                .accessToken(token)
-                .userId(userEntity.getUserId())
-                .build();
-    }
 
-    /**
-     * Encodes the raw password using the configured PasswordEncoder.
-     */
-    public String encodePassword(String rawPassword) {
-        return passwordEncoder.encode(rawPassword);
+        return LoginResponse.buildResponse(token, user.getUserId());
     }
 }
