@@ -1,8 +1,11 @@
 package com.g13cs3219.server.security;
 
 import java.io.IOException;
+import java.util.Set;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -28,10 +31,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String authHeader = request.getHeader("Authorization");
-
         // If the Authorization header is missing or does not start with "Bearer ",
         // skip authentication and continue the filter chain
+        String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -39,7 +41,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Extract the token from the Authorization header and validate it
         String token = authHeader.substring(7);
-        jwtService.validateToken(token);
+        try {
+            jwtService.validateToken(token);
+        } catch(Exception e) {
+            // If the token is invalid or expired, return a 401 Unauthorized response
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error during filter\":\"" + e.getMessage() + "\"}");
+            return;
+        }
 
         // Extract the email from the token and check if the user exists
         String email = jwtService.extractEmail(token);
@@ -47,7 +57,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // If the user exists, set the authentication in the security context
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(user, null, null);
+                new UsernamePasswordAuthenticationToken(
+                        user,
+                        null,
+                        Set.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().toString()))
+                );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         // Continue the filter chain
