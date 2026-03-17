@@ -36,7 +36,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("data", loginResponse));
     }
 
-    @GetMapping(path = "user/auth")
+    @GetMapping(path = "/user/auth")
     public ResponseEntity<Map<String, Object>> getAuth(Authentication authentication) {
         AuthResponse authResponse = authService.getAuth(authentication);
         return ResponseEntity.ok(Map.of("message", authResponse));
