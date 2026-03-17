@@ -3,8 +3,9 @@ package com.g13cs3219.server.controllers;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,7 +21,8 @@ public class UserController {
 
     private final UserService userService;
 
-    @PatchMapping(path = "/user/{targetId}/role")
+    @PutMapping(path = "/user/{targetId}/role")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> updateRole(@PathVariable("targetId") Long targetId,
                                                           @RequestBody UpdateRoleRequest promoteRequest) {
         UpdateRoleResponse updateRoleResponse = userService.updateRole(targetId, promoteRequest);

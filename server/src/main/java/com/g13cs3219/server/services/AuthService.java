@@ -1,11 +1,14 @@
 package com.g13cs3219.server.services;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import com.g13cs3219.server.dto.responses.AuthResponse;
 import com.g13cs3219.server.dto.responses.LoginResponse;
 import com.g13cs3219.server.dto.requests.LoginRequest;
 import com.g13cs3219.server.dto.requests.RegisterRequest;
 import com.g13cs3219.server.dto.responses.RegisterResponse;
+import com.g13cs3219.server.model.Role;
 import com.g13cs3219.server.model.User;
 import com.g13cs3219.server.repositories.UserRepository;
 
@@ -27,14 +30,16 @@ public class AuthService {
      * @return the ID of the newly registered user
      */
     public RegisterResponse register(RegisterRequest request) {
-        // Validate the request body
+        // Validate input
         RegisterRequest.validate(request);
+        userService.validateEmail(request.getEmail());
+        passwordService.validatePassword(request.getPassword());
 
         // Encode the password before saving
         String encodedPassword = passwordService.encodePassword(request.getPassword());
 
         // Check if email already exists
-        userService.checkUserExistsByEmail(request.getEmail());
+        userService.checkEmailAlreadyExist(request.getEmail());
 
         // Build a new user with input fields
         User user = User.builder()
@@ -69,5 +74,42 @@ public class AuthService {
         String token = jwtService.generateToken(request.getEmail());
 
         return LoginResponse.buildResponse(token, user.getUserId());
+    }
+
+    /**
+     * Retrieves the authentication information of the currently authenticated user.
+     *
+     * @param authentication the authentication object containing the user's details
+     * @return a response containing the user's ID, email, and role
+     */
+    public AuthResponse getAuth(Authentication authentication) {
+        // Validate the authentication object
+        validateAuthentication(authentication);
+        User user = (User) authentication.getPrincipal();
+
+        // Extract user details from the authentication objects
+        Long userId = user.getUserId();
+        String email = user.getEmail();
+        Role role = user.getRole();
+
+        return AuthResponse.buildResponse(userId, email, role);
+    }
+
+    /**
+     * Validates the authentication object to ensure it is not null and contains a valid principal.
+     *
+     * @param authentication the authentication object to validate
+     * @throws IllegalStateException if the authentication is null or does not contain a valid principal
+     */
+    public void validateAuthentication(Authentication authentication) {
+        if (authentication == null) {
+            throw new IllegalStateException("Authentication is not available");
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof User)) {
+            String principalType = (principal != null) ? principal.getClass().getName() : "null";
+            throw new IllegalStateException("Unexpected principal type: " + principalType);
+        }
     }
 }

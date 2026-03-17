@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.g13cs3219.server.dto.requests.UpdateRoleRequest;
 import com.g13cs3219.server.dto.responses.UpdateRoleResponse;
 import com.g13cs3219.server.exceptions.EmailAlreadyExistsException;
+import com.g13cs3219.server.exceptions.InvalidEmailFormatException;
 import com.g13cs3219.server.exceptions.UserNotFoundException;
 import com.g13cs3219.server.model.Role;
 import com.g13cs3219.server.model.User;
@@ -19,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PasswordService passwordService;
+    private final JwtService jwtService;
 
     /**
      * Updates the role of a target user. Only admins can perform this action.
@@ -34,19 +35,29 @@ public class UserService {
         UpdateRoleRequest.validateRequest(request);
 
         // Get the admin and target user
-        Long adminId = request.getAdminId();
-        User admin = getUserById(adminId);
         User target = getUserById(targetId);
-
-        // Verify admin
-        verifyAdmin(admin);
-        passwordService.verifyPassword(admin, request.getPassword());
 
         // Update the user's role
         Role role = Role.fromId(request.getNewRole());
         userRepository.updateUserRole(target, role);
 
         return UpdateRoleResponse.buildResponse(role);
+    }
+
+    /**
+     * Validates the format of the given email. The email should be in the format of 'youremail@domain'.
+     *
+     * @param email the email to validate
+     * @throws IllegalArgumentException    if the email is null or blank
+     * @throws InvalidEmailFormatException if the email does not match the required format
+     */
+    public void validateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email cannot be null or blank.");
+        }
+        if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+            throw new InvalidEmailFormatException();
+        }
     }
 
     /**
@@ -74,24 +85,12 @@ public class UserService {
     }
 
     /**
-     * Verifies that the given user has an admin role.
-     *
-     * @param admin the user to verify
-     * @throws AccessDeniedException if the user does not have an admin role
-     */
-    public void verifyAdmin(User admin) {
-        if (admin.getRole() != Role.ADMIN) {
-            throw new AccessDeniedException("Only admins can perform this action.");
-        }
-    }
-
-    /**
      * Checks if a user with the given email already exists.
      *
      * @param email the email to check for existence
      * @throws EmailAlreadyExistsException if no user with the given email exists
      */
-    public void checkUserExistsByEmail(String email) {
+    public void checkEmailAlreadyExist(String email) {
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException(email);
         }
