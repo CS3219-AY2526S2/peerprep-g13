@@ -1,9 +1,9 @@
 package com.g13cs3219.server.security;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +19,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
@@ -44,10 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             jwtService.validateToken(token);
         } catch(Exception e) {
-            // If the token is invalid or expired, return a 401 Unauthorized response
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error during filter\":\"" + e.getMessage() + "\"}");
+            handleAuthenticationException(response, e);
             return;
         }
 
@@ -66,5 +64,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Continue the filter chain
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Handles authentication exceptions by sending a 401 Unauthorized response with a JSON error message.
+     *
+     * @param response the HttpServletResponse to send the error response
+     * @param e the exception that occurred during authentication
+     * @throws IOException if an input or output exception occurs while writing the response
+     */
+    private void handleAuthenticationException(HttpServletResponse response, Exception e) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, String> errorBody = Map.of("error", e.getMessage());
+
+        response.getWriter().write(objectMapper.writeValueAsString(errorBody));
     }
 }
