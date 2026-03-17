@@ -3,6 +3,7 @@ package com.g13cs3219.server.controllers;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,8 +23,9 @@ public class UserController {
 
     @PatchMapping(path = "/user/{targetId}/role")
     public ResponseEntity<Map<String, Object>> updateRole(@PathVariable("targetId") Long targetId,
+                                                          Authentication authentication,
                                                           @RequestBody UpdateRoleRequest promoteRequest) {
-        UpdateRoleResponse updateRoleResponse = userService.updateRole(targetId, promoteRequest);
+        UpdateRoleResponse updateRoleResponse = userService.updateRole(targetId, authentication, promoteRequest);
         return ResponseEntity.ok(Map.of("data", updateRoleResponse));
     }
 }
