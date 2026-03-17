@@ -1,7 +1,6 @@
 package com.g13cs3219.server.services;
 
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import com.g13cs3219.server.dto.requests.UpdateRoleRequest;
@@ -21,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PasswordService passwordService;
+    private final JwtService jwtService;
 
     /**
      * Updates the role of a target user. Only admins can perform this action.
@@ -31,14 +30,12 @@ public class UserService {
      * @return a response containing the new role of the target user
      */
     @Transactional
-    public UpdateRoleResponse updateRole(Long targetId, Authentication authentication, UpdateRoleRequest request) {
+    public UpdateRoleResponse updateRole(Long targetId, UpdateRoleRequest request) {
         // Validate the request
         UpdateRoleRequest.validateRequest(request);
 
         // Get the admin and target user
-        User admin = (User) authentication.getPrincipal();
         User target = getUserById(targetId);
-        verifyAdmin(admin);
 
         // Update the user's role
         Role role = Role.fromId(request.getNewRole());
@@ -48,7 +45,8 @@ public class UserService {
     }
 
     /**
-     * Validates the format of the given email. The email should be in the format of 'youremail@gmail.com'.
+     * Validates the format of the given email. The email should be in the format of 'youremail@domain'.
+     *
      * @param email the email to validate
      * @throws IllegalArgumentException    if the email is null or blank
      * @throws InvalidEmailFormatException if the email does not match the required format
@@ -57,7 +55,7 @@ public class UserService {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email cannot be null or blank.");
         }
-        if (!email.matches("^[A-Za-z0-9+_.-]+@gmail\\.com$")) {
+        if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$\n")) {
             throw new InvalidEmailFormatException();
         }
     }
@@ -84,18 +82,6 @@ public class UserService {
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(UserNotFoundException::new);
-    }
-
-    /**
-     * Verifies that the given user has an admin role.
-     *
-     * @param admin the user to verify
-     * @throws AccessDeniedException if the user does not have an admin role
-     */
-    public void verifyAdmin(User admin) {
-        if (admin.getRole() != Role.ADMIN) {
-            throw new AccessDeniedException("Only admins can perform this action.");
-        }
     }
 
     /**
