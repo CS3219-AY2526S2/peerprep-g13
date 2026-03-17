@@ -55,7 +55,7 @@ public class UserService {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email cannot be null or blank.");
         }
-        if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$\n")) {
+        if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
             throw new InvalidEmailFormatException();
         }
     }
