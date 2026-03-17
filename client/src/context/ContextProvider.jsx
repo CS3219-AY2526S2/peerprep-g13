@@ -5,27 +5,23 @@ const AuthContext = createContext(null);
 
 export default function ContextProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
 
   async function returnDashboard() {
-    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("accessToken");
 
-    if (!userId) {
+    if (!token) {
       setUser(null);
-      setDashboard(null);
       setLoading(false);
       return;
     }
 
     try {
-      const res = await userApi.dashboard(userId);
-      setDashboard(res.data);
-      setUser(res.data.user || null);
+      const res = await userApi.getAuth();
+      setUser(res.data.message || null);
     } catch (error) {
-      console.error("Failed to fetch dashboard:", error);
+      console.error("Failed to fetch auth:", error);
       setUser(null);
-      setDashboard(null);
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userId");
     } finally {
@@ -49,12 +45,7 @@ export default function ContextProvider({ children }) {
   }
 
   async function register(username, email, password) {
-    await userApi.register({
-      username,
-      email,
-      password,
-    });
-
+    await userApi.register({ username, email, password });
     await login(email, password);
   }
 
@@ -67,22 +58,19 @@ export default function ContextProvider({ children }) {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userId");
       setUser(null);
-      setDashboard(null);
     }
   }
 
   const value = {
     user,
-    dashboard,
     loading,
     login,
     register,
     logout,
     returnDashboard,
     isAuthenticated: !!user,
-    isAdmin: user?.role === "admin",
-    isQuestionManager:
-      user?.role === "admin" || user?.role === "question_master",
+    isAdmin: user?.role === "ADMIN",
+    isQuestionManager: user?.role === "ADMIN" || user?.role === "QUESTION_MASTER",
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

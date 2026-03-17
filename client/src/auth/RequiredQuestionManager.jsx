@@ -9,7 +9,7 @@ export default function RequiredQuestionManager({ children }) {
   if (!user) return <Navigate to="/auth" replace />;
 
   const allowed =
-    user.role === "admin" || user.role === "question_master";
+    user.role === "ADMIN" || user.role === "QUESTION_MASTER";
 
   if (!allowed) return <Navigate to="/questions" replace />;
 

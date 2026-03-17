@@ -94,9 +94,9 @@ export default function DashboardPage() {
   const totalQuestions = metrics.totalQuestions ?? 150;
 
   const roleClass =
-    user.role === "admin"
+    user.role === "ADMIN"
       ? styles.admin
-      : user.role === "question_master"
+      : user.role === "QUESTION_MASTER"
         ? styles.question_master
         : "";
 
