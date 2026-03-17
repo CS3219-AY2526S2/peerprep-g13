@@ -1,10 +1,12 @@
 package com.g13cs3219.server.services;
 
+import com.g13cs3219.server.dto.requests.UpdateDashboardRequest;
+import com.g13cs3219.server.dto.responses.*;
+import com.g13cs3219.server.repositories.HistoryRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import com.g13cs3219.server.dto.requests.UpdateRoleRequest;
-import com.g13cs3219.server.dto.responses.UpdateRoleResponse;
 import com.g13cs3219.server.exceptions.EmailAlreadyExistsException;
 import com.g13cs3219.server.exceptions.InvalidEmailFormatException;
 import com.g13cs3219.server.exceptions.UserNotFoundException;
@@ -15,12 +17,16 @@ import com.g13cs3219.server.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final HistoryRepository historyRepository;
 
     /**
      * Updates the role of a target user. Only admins can perform this action.
@@ -94,5 +100,50 @@ public class UserService {
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException(email);
         }
+    }
+
+    /**
+     * Retrieves the dashboard data for a user, including profile and submission history.
+     *
+     * @param userId the ID of the target user
+     * @return a DashboardResponse containing user info, history, and metrics
+     */
+    public DashboardResponse getDashboard(Long userId) {
+        User user = getUserById(userId);
+
+        List<HistoryDashboardResponse> history = historyRepository
+                .findByUserIdOrderByFinishedDateDesc(userId)
+                .stream()
+                .map(HistoryDashboardResponse::from)
+                .collect(Collectors.toList());
+
+        return DashboardResponse.build(UserDashboardResponse.from(user), history);
+    }
+
+    /**
+     * Updates the dashboard profile fields for a user.
+     * Only non-null fields in the request are applied.
+     *
+     * @param userId  the ID of the target user
+     * @param request the fields to update
+     * @return a success message response
+     */
+    @Transactional
+    public UpdateDashboardResponse updateDashboard(Long userId, UpdateDashboardRequest request) {
+        User user = getUserById(userId);
+
+        if (request.getUsername() != null && !request.getUsername().isBlank())
+            user.setUsername(request.getUsername());
+        if (request.getName() != null)
+            user.setName(request.getName());
+        if (request.getAvatarUrl() != null)
+            user.setAvatarUrl(request.getAvatarUrl());
+        if (request.getPreferredLanguage() != null)
+            user.setPreferredLanguage(request.getPreferredLanguage());
+        if (request.getPreferredTopic() != null)
+            user.setPreferredTopic(request.getPreferredTopic());
+
+        userRepository.save(user);
+        return UpdateDashboardResponse.success();
     }
 }

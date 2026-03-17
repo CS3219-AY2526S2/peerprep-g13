@@ -1,18 +1,13 @@
 package com.g13cs3219.server.model;
 
+import java.util.ArrayList;
 import java.util.Date;
-
+import java.util.List;
+import com.g13cs3219.server.converter.StringListConverter;
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -53,8 +48,10 @@ public class User {
     @Column(name = "preferred_language")
     private String preferredLanguage;
 
-    @Column(name = "preferred_topic")
-    private String preferredTopic;
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "preferred_topic", columnDefinition = "TEXT")
+    @Builder.Default
+    private List<String> preferredTopic = new ArrayList<>();
 
     @Column(name = "created_by")
     private int createdBy;
