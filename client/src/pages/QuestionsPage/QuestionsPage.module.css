@@ -122,6 +122,67 @@
   text-decoration: underline;
 }
 
+.searchRow {
+  margin: 16px 0 8px;
+}
+
+.searchInput {
+  width: 100%;
+  max-width: 360px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  border-color: #00b8a3;
+  box-shadow: 0 0 0 2px rgba(0, 184, 163, 0.15);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 0 4px;
+}
+
+.pageBtn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageBtnActive {
+  background: #00b8a3;
+  color: #fff;
+  border-color: #00b8a3;
+}
+
+.pageBtnActive:hover {
+  background: #00b8a3 !important;
+}
+
 .topicChip {
   display: inline-block;
   padding: 2px 8px;

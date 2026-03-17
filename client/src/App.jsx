@@ -10,10 +10,8 @@ import EditQuestionPage from "./pages/EditQuestionPage/EditQuestionPage";
 import RequireAuth from "./auth/RequiredAuth";
 import RequiredAdmin from "./auth/RequiredAdmin";
 import RequiredQuestionManager from "./auth/RequiredQuestionManager";
-
-function AdminUsersPage() {
-  return <div>Admin User Management Page</div>;
-}
+import AdminUsersPage from "./pages/AdminUsersPage/AdminUsersPage";
+import Navbar from "./components/Navbar/Navbar";
 
 function UnauthorizedPage() {
   return <div>Unauthorized</div>;
@@ -23,6 +21,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ContextProvider>
+        <Navbar />
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<AuthPage initLoginMode={true} />} />

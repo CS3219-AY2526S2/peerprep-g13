@@ -30,7 +30,9 @@ export default function QuestionForm({
       setForm({
         title: initialData.title || "",
         topics: initialData.topics ?? (initialData.topic ? [initialData.topic] : []),
-        difficulty: initialData.difficulty || "",
+        difficulty: initialData.difficulty
+          ? initialData.difficulty.charAt(0).toUpperCase() + initialData.difficulty.slice(1).toLowerCase()
+          : "",
         prompt: initialData.prompt || "",
         examples: initialData.examples || [],
         constraints: initialData.constraints || [],

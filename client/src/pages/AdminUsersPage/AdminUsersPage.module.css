@@ -1,0 +1,117 @@
+.page {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding: 32px 24px;
+}
+
+.inner {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.pageTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #6c6c6c;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 28px;
+}
+
+.sectionTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+}
+
+.searchRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: #00b8a3;
+  box-shadow: 0 0 0 2px rgba(0, 184, 163, 0.15);
+}
+
+.searchBtn {
+  padding: 8px 18px;
+  background: #00b8a3;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.searchBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.errorText {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin: 8px 0 0;
+}
+
+.emptyText {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 12px 0 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.table thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table tbody td {
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  color: #374151;
+}
