@@ -398,6 +398,101 @@
   color: #00876c;
 }
 
+/* Edit profile */
+.editBtn {
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.editBtn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.fieldGroup {
+  margin-bottom: 14px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.fieldInput:focus {
+  border-color: #00b8a3;
+  box-shadow: 0 0 0 2px rgba(0, 184, 163, 0.15);
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.saveBtn {
+  padding: 8px 18px;
+  background: #00b8a3;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cancelBtn {
+  padding: 8px 14px;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.saveError {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin: 0 0 10px;
+}
+
+.saveSuccess {
+  font-size: 0.875rem;
+  color: #00876c;
+  margin: 0 0 10px;
+}
+
 /* Loading / error */
 .loadingState {
   display: flex;

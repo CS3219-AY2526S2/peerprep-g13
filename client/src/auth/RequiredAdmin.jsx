@@ -8,7 +8,7 @@ export default function RequiredAdmin({ children }) {
   if (loading) return <div style={{ padding: 24 }}>Loading...</div>;
   if (!user) return <Navigate to="/auth" replace />;
 
-  if (user.role !== "ADMIN") return <Navigate to="/questions" replace />;
+  if (user.role !== "admin") return <Navigate to="/questions" replace />;
 
   return children;
 }

@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
+import { MultiSelect } from "@mantine/core";
 import { useAuth } from "../../context/ContextProvider";
+import { userApi } from "../../api/user";
+import { TOPICS } from "../../components/questions/constants";
 import styles from "./DashboardPage.module.css";
 
 function formatDate(value) {
@@ -36,24 +39,10 @@ function SolvedRing({ solved, total, size = 120, stroke = 10 }) {
   return (
     <div className={styles.ringWrapper} style={{ width: size, height: size }}>
       <svg width={size} height={size}>
-        {/* track */}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f0f0f0" strokeWidth={stroke} />
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#f0f0f0"
-          strokeWidth={stroke}
-        />
-        {/* filled arc */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#00b8a3"
-          strokeWidth={stroke}
-          strokeLinecap="round"
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke="#00b8a3" strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={`${dash} ${circ}`}
           style={{ transition: "stroke-dasharray 0.6s ease" }}
         />
@@ -67,38 +56,60 @@ function SolvedRing({ solved, total, size = 120, stroke = 10 }) {
 }
 
 export default function DashboardPage() {
-  const { user, dashboard, loading } = useAuth();
+  const { user, dashboard, loading, returnDashboard } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
 
-  if (loading) {
-    return <div className={styles.loadingState}>Loading dashboard…</div>;
-  }
-
-  if (!user) {
-    return <div className={styles.loadingState}>No user data found.</div>;
-  }
+  if (loading) return <div className={styles.loadingState}>Loading dashboard…</div>;
+  if (!user) return <div className={styles.loadingState}>No user data found.</div>;
 
   const history = dashboard?.history || [];
   const metrics = dashboard?.metrics || {};
-
-  const displayName = user.name || user.displayName || "Unknown User";
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const displayName = user.name || user.username || "Unknown User";
+  const initials = displayName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   const preferredTopics = user.preferredTopic || [];
   const totalSolved = metrics.totalSolved ?? history.length;
-
-  // Placeholder totals — replace with real data when available
   const totalQuestions = metrics.totalQuestions ?? 150;
 
   const roleClass =
-    user.role === "ADMIN"
+    user.role === "admin"
       ? styles.admin
-      : user.role === "QUESTION_MASTER"
+      : user.role === "question_master"
         ? styles.question_master
         : "";
+
+  function openEdit() {
+    setSaveError("");
+    setSaveSuccess("");
+    setForm({
+      name: user.name || "",
+      username: user.username || "",
+      avatarUrl: user.avatarUrl || "",
+      preferredLanguage: user.preferredLanguage || "",
+      preferredTopic: user.preferredTopic || [],
+    });
+    setEditing(true);
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setSaving(true);
+    setSaveError("");
+    setSaveSuccess("");
+    try {
+      await userApi.updateDashboard(user.userId, form);
+      setSaveSuccess("Profile updated.");
+      setEditing(false);
+      await returnDashboard();
+    } catch (err) {
+      setSaveError(err?.response?.data?.message || "Failed to save.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -112,12 +123,7 @@ export default function DashboardPage() {
             <div className={`${styles.card} ${styles.profileCard}`}>
               <div className={styles.avatarWrapper}>
                 {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={displayName}
-                    className={styles.avatar}
-                    style={{ objectFit: "cover" }}
-                  />
+                  <img src={user.avatarUrl} alt={displayName} className={styles.avatar} style={{ objectFit: "cover" }} />
                 ) : (
                   <div className={styles.avatar}>{initials}</div>
                 )}
@@ -125,29 +131,21 @@ export default function DashboardPage() {
 
               <p className={styles.displayName}>{displayName}</p>
               <p className={styles.username}>@{user.username || "unknown"}</p>
-
-              <span className={`${styles.roleBadge} ${roleClass}`}>
-                {user.role || "user"}
-              </span>
+              <span className={`${styles.roleBadge} ${roleClass}`}>{user.role || "user"}</span>
 
               <hr className={styles.divider} />
 
               <div className={styles.profileMeta}>
                 <div className={styles.metaRow}>
                   <span className={styles.metaLabel}>Language</span>
-                  <span className={styles.metaValue}>
-                    {user.preferredLanguage || "Not set"}
-                  </span>
+                  <span className={styles.metaValue}>{user.preferredLanguage || "Not set"}</span>
                 </div>
-
                 <div className={styles.metaRow}>
                   <span className={styles.metaLabel}>Topics</span>
                   {preferredTopics.length > 0 ? (
                     <div className={styles.topicsList}>
                       {preferredTopics.map((t) => (
-                        <span key={t} className={styles.topicChip}>
-                          {t}
-                        </span>
+                        <span key={t} className={styles.topicChip}>{t}</span>
                       ))}
                     </div>
                   ) : (
@@ -155,77 +153,116 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
+
+              <hr className={styles.divider} />
+              {saveSuccess && <p className={styles.saveSuccess}>{saveSuccess}</p>}
+              <button className={styles.editBtn} onClick={openEdit}>Edit Profile</button>
             </div>
+
+            {/* Edit form card */}
+            {editing && (
+              <div className={styles.card}>
+                <p className={styles.cardTitle}>Edit Profile</p>
+                <form onSubmit={handleSave}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Display Name</label>
+                    <input
+                      className={styles.fieldInput}
+                      value={form.name}
+                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    />
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Username</label>
+                    <input
+                      className={styles.fieldInput}
+                      value={form.username}
+                      onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+                    />
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Avatar URL</label>
+                    <input
+                      className={styles.fieldInput}
+                      value={form.avatarUrl}
+                      onChange={(e) => setForm((f) => ({ ...f, avatarUrl: e.target.value }))}
+                    />
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Preferred Language</label>
+                    <input
+                      className={styles.fieldInput}
+                      value={form.preferredLanguage}
+                      onChange={(e) => setForm((f) => ({ ...f, preferredLanguage: e.target.value }))}
+                    />
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <MultiSelect
+                      label={<span className={styles.fieldLabel}>Preferred Topics</span>}
+                      data={TOPICS}
+                      value={form.preferredTopic}
+                      onChange={(val) => setForm((f) => ({ ...f, preferredTopic: val }))}
+                      searchable
+                      placeholder={form.preferredTopic.length === 0 ? "Select topics…" : ""}
+                    />
+                  </div>
+                  {saveError && <p className={styles.saveError}>{saveError}</p>}
+                  <div className={styles.formActions}>
+                    <button type="submit" className={styles.saveBtn} disabled={saving}>
+                      {saving ? "Saving…" : "Save"}
+                    </button>
+                    <button type="button" className={styles.cancelBtn} onClick={() => setEditing(false)} disabled={saving}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
 
             {/* Account info card */}
             <div className={`${styles.card} ${styles.infoCard}`}>
               <p className={styles.cardTitle}>Account Info</p>
               <div className={styles.infoRow}>
                 <span className={styles.infoKey}>User ID</span>
-                <span className={styles.infoVal} title={user.userId}>
-                  {user.userId ?? "N/A"}
-                </span>
+                <span className={styles.infoVal}>{user.userId ?? "N/A"}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoKey}>Joined</span>
-                <span className={styles.infoVal}>
-                  {formatDate(user.createdAt)}
-                </span>
+                <span className={styles.infoVal}>{formatDate(user.createdAt)}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoKey}>Last updated</span>
-                <span className={styles.infoVal}>
-                  {formatDate(user.updatedAt)}
-                </span>
+                <span className={styles.infoVal}>{formatDate(user.updatedAt)}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoKey}>Status</span>
-                <span className={styles.infoVal}>
-                  {user.isActive !== false ? "Active" : "Inactive"}
-                </span>
+                <span className={styles.infoVal}>{user.isActive !== false ? "Active" : "Inactive"}</span>
               </div>
             </div>
           </div>
 
           {/* ── Right column ── */}
           <div className={styles.right}>
-            {/* Solved widget */}
             <div className={`${styles.card} ${styles.solvedWidget}`}>
               <SolvedRing solved={totalSolved} total={totalQuestions} />
               <div className={styles.ringLegend}>
-                <p className={styles.cardTitle} style={{ marginBottom: 12 }}>
-                  Problems Solved
-                </p>
+                <p className={styles.cardTitle} style={{ marginBottom: 12 }}>Problems Solved</p>
                 <div className={styles.legendItem}>
-                  <span
-                    className={styles.legendDot}
-                    style={{ background: "#00b8a3" }}
-                  />
+                  <span className={styles.legendDot} style={{ background: "#00b8a3" }} />
                   <span className={styles.legendText}>Solved</span>
                   <span className={styles.legendCount}>{totalSolved}</span>
                 </div>
                 <div className={styles.legendItem}>
-                  <span
-                    className={styles.legendDot}
-                    style={{
-                      background: "#f0f0f0",
-                      border: "1px solid #d1d5db",
-                    }}
-                  />
+                  <span className={styles.legendDot} style={{ background: "#f0f0f0", border: "1px solid #d1d5db" }} />
                   <span className={styles.legendText}>Remaining</span>
-                  <span className={styles.legendCount}>
-                    {Math.max(totalQuestions - totalSolved, 0)}
-                  </span>
+                  <span className={styles.legendCount}>{Math.max(totalQuestions - totalSolved, 0)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Quick-stat cards */}
             <div className={styles.statsRow}>
               <div className={`${styles.card} ${styles.statCard}`}>
-                <div className={`${styles.statNumber} ${styles.green}`}>
-                  {totalSolved}
-                </div>
+                <div className={`${styles.statNumber} ${styles.green}`}>{totalSolved}</div>
                 <div className={styles.statLabel}>Total Solved</div>
               </div>
               <div className={`${styles.card} ${styles.statCard}`}>
@@ -234,22 +271,16 @@ export default function DashboardPage() {
               </div>
               <div className={`${styles.card} ${styles.statCard}`}>
                 <div className={styles.statNumber}>
-                  {history.length > 0
-                    ? `${Math.round((totalSolved / totalQuestions) * 100)}%`
-                    : "0%"}
+                  {history.length > 0 ? `${Math.round((totalSolved / totalQuestions) * 100)}%` : "0%"}
                 </div>
                 <div className={styles.statLabel}>Completion</div>
               </div>
             </div>
 
-            {/* Solving history */}
             <div className={`${styles.card} ${styles.historyCard}`}>
               <p className={styles.cardTitle}>Recent Submissions</p>
-
               {history.length === 0 ? (
-                <div className={styles.emptyState}>
-                  No submissions yet — start solving!
-                </div>
+                <div className={styles.emptyState}>No submissions yet — start solving!</div>
               ) : (
                 <table className={styles.table}>
                   <thead>
@@ -262,23 +293,12 @@ export default function DashboardPage() {
                   </thead>
                   <tbody>
                     {[...history]
-                      .sort(
-                        (a, b) =>
-                          new Date(b.finishedDate) - new Date(a.finishedDate)
-                      )
+                      .sort((a, b) => new Date(b.finishedDate) - new Date(a.finishedDate))
                       .map((item, index) => (
                         <tr key={`${item.questionId}-${index}`}>
-                          <td style={{ color: "#9ca3af", width: 32 }}>
-                            {index + 1}
-                          </td>
-                          <td>
-                            <span className={styles.qId}>
-                              {item.questionId}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={styles.statusPill}>Solved</span>
-                          </td>
+                          <td style={{ color: "#9ca3af", width: 32 }}>{index + 1}</td>
+                          <td><span className={styles.qId}>{item.questionId}</span></td>
+                          <td><span className={styles.statusPill}>Solved</span></td>
                           <td>{formatDateTime(item.finishedDate)}</td>
                         </tr>
                       ))}
