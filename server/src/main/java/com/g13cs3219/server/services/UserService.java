@@ -1,9 +1,10 @@
 package com.g13cs3219.server.services;
 
 import com.g13cs3219.server.dto.requests.UpdateDashboardRequest;
+import com.g13cs3219.server.dto.requests.UpdatePasswordRequest;
 import com.g13cs3219.server.dto.responses.*;
 import com.g13cs3219.server.repositories.HistoryRepository;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import com.g13cs3219.server.dto.requests.UpdateRoleRequest;
@@ -13,6 +14,7 @@ import com.g13cs3219.server.exceptions.UserNotFoundException;
 import com.g13cs3219.server.model.Role;
 import com.g13cs3219.server.model.User;
 import com.g13cs3219.server.repositories.UserRepository;
+import com.g13cs3219.server.utils.AuthenticationValidator;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +27,33 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final JwtService jwtService;
     private final HistoryRepository historyRepository;
+    private final PasswordService passwordService;
+
+    /**
+     * Updates the password of the authenticated user.
+     *
+     * @param authentication the authentication object containing the user's details
+     * @param request        the request containing the new password
+     * @return a response indicating the success of the password update
+     */
+    @Transactional
+    public UpdatePasswordResponse updatePassword(Authentication authentication, UpdatePasswordRequest request) {
+        // Validate the new password
+        passwordService.validatePassword(request.getNewPassword());
+
+        // Get the user
+        AuthenticationValidator.validateAuthentication(authentication);
+        User user = (User) authentication.getPrincipal();
+
+        // Verify the current password
+        passwordService.verifyPassword(user, request.getCurrentPassword());
+
+        // Encode the new password and update it in the database
+        String encodedPassword = passwordService.encodePassword(request.getNewPassword());
+        userRepository.updateUserPassword(user, encodedPassword);
+        return UpdatePasswordResponse.buildResponse();
+    }
 
     /**
      * Updates the role of a target user. Only admins can perform this action.

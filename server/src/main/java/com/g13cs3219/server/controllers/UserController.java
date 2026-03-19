@@ -3,13 +3,16 @@ package com.g13cs3219.server.controllers;
 import java.util.Map;
 
 import com.g13cs3219.server.dto.requests.UpdateDashboardRequest;
+import com.g13cs3219.server.dto.requests.UpdatePasswordRequest;
 import com.g13cs3219.server.dto.responses.DashboardResponse;
 import com.g13cs3219.server.dto.responses.UpdateDashboardResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.g13cs3219.server.dto.requests.UpdateRoleRequest;
+import com.g13cs3219.server.dto.responses.UpdatePasswordResponse;
 import com.g13cs3219.server.dto.responses.UpdateRoleResponse;
 import com.g13cs3219.server.services.UserService;
 
@@ -21,12 +24,19 @@ public class UserController {
 
     private final UserService userService;
 
-    @PutMapping(path = "/user/{targetId}/role")
+    @PatchMapping(path = "/user/password")
+    public ResponseEntity<Map<String, Object>> updatePassword(Authentication authentication,
+                                                              @RequestBody UpdatePasswordRequest request) {
+        UpdatePasswordResponse response = userService.updatePassword(authentication, request);
+        return ResponseEntity.ok(Map.of("data", response));
+    }
+
+    @PatchMapping(path = "/user/{targetId}/role")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> updateRole(@PathVariable("targetId") Long targetId,
-                                                          @RequestBody UpdateRoleRequest promoteRequest) {
-        UpdateRoleResponse updateRoleResponse = userService.updateRole(targetId, promoteRequest);
-        return ResponseEntity.ok(Map.of("data", updateRoleResponse));
+                                                          @RequestBody UpdateRoleRequest request) {
+        UpdateRoleResponse response = userService.updateRole(targetId, request);
+        return ResponseEntity.ok(Map.of("data", response));
     }
     @GetMapping(path = "/user/dashboard/{userId}")
     public ResponseEntity<Map<String, Object>> getDashboard(@PathVariable Long userId) {
