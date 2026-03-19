@@ -7,6 +7,7 @@ import com.g13cs3219.server.dto.responses.AuthResponse;
 import com.g13cs3219.server.dto.responses.LoginResponse;
 import com.g13cs3219.server.dto.requests.LoginRequest;
 import com.g13cs3219.server.dto.requests.RegisterRequest;
+import com.g13cs3219.server.dto.responses.LogoutResponse;
 import com.g13cs3219.server.dto.responses.RegisterResponse;
 import com.g13cs3219.server.model.Role;
 import com.g13cs3219.server.model.User;
@@ -74,6 +75,21 @@ public class AuthService {
         String token = jwtService.generateToken(request.getEmail());
 
         return LoginResponse.buildResponse(token, user.getUserId());
+    }
+
+    /**
+     * Logs out the currently authenticated user. This method can be used to perform any necessary cleanup
+     * related to the user's session or authentication state.
+     *
+     * @param authentication the authentication object containing the user's details
+     * @return a response indicating that the logout was successful
+     */
+    public LogoutResponse logout(Authentication authentication) {
+        // Validate the authentication object
+        validateAuthentication(authentication);
+        User user = (User) authentication.getPrincipal();
+
+        return LogoutResponse.buildResponse();
     }
 
     /**
