@@ -12,7 +12,7 @@ import com.g13cs3219.server.model.Role;
 import com.g13cs3219.server.model.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface    UserRepository extends JpaRepository<User, Long> {
 
     Boolean existsByEmail(String email);
 
@@ -26,5 +26,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE User u SET u.encodedPassword = :encodedPassword WHERE u = :user")
-    void updateUserPassword(User user, String encodedPassword);
+    void updateUserPassword(@Param("user") User user, @Param("encodedPassword") String encodedPassword);
 }

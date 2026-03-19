@@ -24,7 +24,7 @@ public class UserController {
 
     private final UserService userService;
 
-    @PatchMapping(path = "user/password")
+    @PatchMapping(path = "/user/password")
     public ResponseEntity<Map<String, Object>> updatePassword(Authentication authentication,
                                                               @RequestBody UpdatePasswordRequest request) {
         UpdatePasswordResponse response = userService.updatePassword(authentication, request);
