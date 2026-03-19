@@ -87,7 +87,7 @@ public class AuthService {
      */
     public LogoutResponse logout(Authentication authentication) {
         // Validate the authentication object
-        validateAuthentication(authentication);
+        AuthenticationValidator.validateAuthentication(authentication);
         User user = (User) authentication.getPrincipal();
 
         return LogoutResponse.buildResponse();

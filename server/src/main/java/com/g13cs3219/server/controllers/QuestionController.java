@@ -36,7 +36,7 @@ public class QuestionController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QUESTION_MASTER')")
     public ResponseEntity<Map<String, Object>> createQuestion(
             @RequestBody QuestionRequest req) {
         Long createdBy = getCallerUserId();
@@ -46,7 +46,7 @@ public class QuestionController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QUESTION_MASTER')")
     public ResponseEntity<String> updateQuestion(
             @PathVariable Long id,
             @RequestBody QuestionRequest req) {
