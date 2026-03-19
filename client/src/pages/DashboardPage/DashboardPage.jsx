@@ -307,6 +307,19 @@ export default function DashboardPage() {
                       value={passwordForm.newPassword}
                       onChange={(e) => setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))}
                     />
+                    <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 2 }}>
+                      {[
+                        { label: "At least 8 characters", met: passwordForm.newPassword.length >= 8 },
+                        { label: "One uppercase letter (A–Z)", met: /[A-Z]/.test(passwordForm.newPassword) },
+                        { label: "One lowercase letter (a–z)", met: /[a-z]/.test(passwordForm.newPassword) },
+                        { label: "One digit (0–9)", met: /[0-9]/.test(passwordForm.newPassword) },
+                        { label: "One special character: ! @ # $ % ^ & * ( )", met: /[!@#$%^&*()]/.test(passwordForm.newPassword) },
+                      ].map(({ label, met }) => (
+                        <span key={label} style={{ fontSize: "0.75rem", color: passwordForm.newPassword.length === 0 ? "#9ca3af" : met ? "#00876c" : "#dc2626" }}>
+                          {met ? "✓" : "·"} {label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                   <div className={styles.fieldGroup}>
                     <label className={styles.fieldLabel}>Retype New Password</label>

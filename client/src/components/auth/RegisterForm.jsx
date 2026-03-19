@@ -104,6 +104,21 @@ export default function RegisterForm({ setIsLoginMode }) {
             onChange={(event) => setPassword(event.currentTarget.value)}
           />
 
+          <Space h="xs" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {[
+              { label: "At least 8 characters", met: password.length >= 8 },
+              { label: "One uppercase letter (A–Z)", met: /[A-Z]/.test(password) },
+              { label: "One lowercase letter (a–z)", met: /[a-z]/.test(password) },
+              { label: "One digit (0–9)", met: /[0-9]/.test(password) },
+              { label: "One special character: ! @ # $ % ^ & * ( )", met: /[!@#$%^&*()]/.test(password) },
+            ].map(({ label, met }) => (
+              <Text key={label} size="xs" c={password.length === 0 ? "dimmed" : met ? "green" : "red"}>
+                {met ? "✓" : "·"} {label}
+              </Text>
+            ))}
+          </div>
+
           {err && (
             <>
               <Space h="sm" />
