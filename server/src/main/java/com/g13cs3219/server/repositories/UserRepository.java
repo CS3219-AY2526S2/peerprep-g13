@@ -23,4 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE User u SET u.role = :role WHERE u = :user")
     void updateUserRole(@Param("user") User user, @Param("role") Role role);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE User u SET u.encodedPassword = :encodedPassword WHERE u = :user")
+    void updateUserPassword(User user, String encodedPassword);
 }
