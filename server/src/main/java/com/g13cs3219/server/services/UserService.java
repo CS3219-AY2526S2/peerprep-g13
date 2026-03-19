@@ -37,6 +37,7 @@ public class UserService {
      * @param request        the request containing the new password
      * @return a response indicating the success of the password update
      */
+    @Transactional
     public UpdatePasswordResponse updatePassword(Authentication authentication, UpdatePasswordRequest request) {
         // Validate the new password
         passwordService.validatePassword(request.getNewPassword());
