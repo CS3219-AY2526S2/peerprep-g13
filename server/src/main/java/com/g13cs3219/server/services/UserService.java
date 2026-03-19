@@ -4,7 +4,6 @@ import com.g13cs3219.server.dto.requests.UpdateDashboardRequest;
 import com.g13cs3219.server.dto.requests.UpdatePasswordRequest;
 import com.g13cs3219.server.dto.responses.*;
 import com.g13cs3219.server.repositories.HistoryRepository;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +14,7 @@ import com.g13cs3219.server.exceptions.UserNotFoundException;
 import com.g13cs3219.server.model.Role;
 import com.g13cs3219.server.model.User;
 import com.g13cs3219.server.repositories.UserRepository;
+import com.g13cs3219.server.utils.AuthenticationValidator;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final HistoryRepository historyRepository;
     private final PasswordService passwordService;
-    private final AuthService authService;
 
     /**
      * Updates the password of the authenticated user.
@@ -43,7 +42,7 @@ public class UserService {
         passwordService.validatePassword(request.getNewPassword());
 
         // Get the user
-        authService.validateAuthentication(authentication);
+        AuthenticationValidator.validateAuthentication(authentication);
         User user = (User) authentication.getPrincipal();
 
         // Verify the current password

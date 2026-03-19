@@ -11,6 +11,7 @@ import com.g13cs3219.server.dto.responses.RegisterResponse;
 import com.g13cs3219.server.model.Role;
 import com.g13cs3219.server.model.User;
 import com.g13cs3219.server.repositories.UserRepository;
+import com.g13cs3219.server.utils.AuthenticationValidator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -84,7 +85,7 @@ public class AuthService {
      */
     public AuthResponse getAuth(Authentication authentication) {
         // Validate the authentication object
-        validateAuthentication(authentication);
+        AuthenticationValidator.validateAuthentication(authentication);
         User user = (User) authentication.getPrincipal();
 
         // Extract user details from the authentication objects
@@ -93,23 +94,5 @@ public class AuthService {
         Role role = user.getRole();
 
         return AuthResponse.buildResponse(userId, email, role);
-    }
-
-    /**
-     * Validates the authentication object to ensure it is not null and contains a valid principal.
-     *
-     * @param authentication the authentication object to validate
-     * @throws IllegalStateException if the authentication is null or does not contain a valid principal
-     */
-    public void validateAuthentication(Authentication authentication) {
-        if (authentication == null) {
-            throw new IllegalStateException("Authentication is not available");
-        }
-
-        Object principal = authentication.getPrincipal();
-        if (!(principal instanceof User)) {
-            String principalType = (principal != null) ? principal.getClass().getName() : "null";
-            throw new IllegalStateException("Unexpected principal type: " + principalType);
-        }
     }
 }
