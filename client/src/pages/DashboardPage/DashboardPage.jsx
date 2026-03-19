@@ -63,6 +63,12 @@ export default function DashboardPage() {
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
 
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+
   if (loading) return <div className={styles.loadingState}>Loading dashboard…</div>;
   if (!user) return <div className={styles.loadingState}>No user data found.</div>;
 
@@ -91,7 +97,70 @@ export default function DashboardPage() {
       preferredLanguage: user.preferredLanguage || "",
       preferredTopic: user.preferredTopic || [],
     });
+    setChangingPassword(false);
     setEditing(true);
+  }
+
+  function openChangePassword() {
+    setPasswordError("");
+    setPasswordSuccess("");
+    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setEditing(false);
+    setChangingPassword(true);
+  }
+
+  async function handlePasswordChange(e) {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError("Please fill in all password fields.");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+    if (!/[A-Z]/.test(passwordForm.newPassword)) {
+      setPasswordError("New password must contain at least one uppercase letter.");
+      return;
+    }
+    if (!/[a-z]/.test(passwordForm.newPassword)) {
+      setPasswordError("New password must contain at least one lowercase letter.");
+      return;
+    }
+    if (!/[0-9]/.test(passwordForm.newPassword)) {
+      setPasswordError("New password must contain at least one digit.");
+      return;
+    }
+    if (!/[!@#$%^&*()]/.test(passwordForm.newPassword)) {
+      setPasswordError("New password must contain at least one special character: ! @ # $ % ^ & * ( )");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await userApi.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordSuccess("Password updated successfully.");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setChangingPassword(false);
+    } catch (err) {
+      setPasswordError(err?.response?.data?.message || "Failed to update password.");
+    } finally {
+      setPasswordSaving(false);
+    }
   }
 
   async function handleSave(e) {
@@ -156,7 +225,9 @@ export default function DashboardPage() {
 
               <hr className={styles.divider} />
               {saveSuccess && <p className={styles.saveSuccess}>{saveSuccess}</p>}
+              {passwordSuccess && <p className={styles.saveSuccess}>{passwordSuccess}</p>}
               <button className={styles.editBtn} onClick={openEdit}>Edit Profile</button>
+              <button className={styles.editBtn} style={{ marginTop: 8 }} onClick={openChangePassword}>Change Password</button>
             </div>
 
             {/* Edit form card */}
@@ -212,6 +283,64 @@ export default function DashboardPage() {
                       {saving ? "Saving…" : "Save"}
                     </button>
                     <button type="button" className={styles.cancelBtn} onClick={() => setEditing(false)} disabled={saving}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Change password card */}
+            {changingPassword && (
+              <div className={styles.card}>
+                <p className={styles.cardTitle}>Change Password</p>
+                <form onSubmit={handlePasswordChange}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Current Password</label>
+                    <input
+                      type="password"
+                      className={styles.fieldInput}
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm((f) => ({ ...f, currentPassword: e.target.value }))}
+                    />
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>New Password</label>
+                    <input
+                      type="password"
+                      className={styles.fieldInput}
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))}
+                    />
+                    <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 2 }}>
+                      {[
+                        { label: "At least 8 characters", met: passwordForm.newPassword.length >= 8 },
+                        { label: "One uppercase letter (A–Z)", met: /[A-Z]/.test(passwordForm.newPassword) },
+                        { label: "One lowercase letter (a–z)", met: /[a-z]/.test(passwordForm.newPassword) },
+                        { label: "One digit (0–9)", met: /[0-9]/.test(passwordForm.newPassword) },
+                        { label: "One special character: ! @ # $ % ^ & * ( )", met: /[!@#$%^&*()]/.test(passwordForm.newPassword) },
+                      ].map(({ label, met }) => (
+                        <span key={label} style={{ fontSize: "0.75rem", color: passwordForm.newPassword.length === 0 ? "#9ca3af" : met ? "#00876c" : "#dc2626" }}>
+                          {met ? "✓" : "·"} {label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Retype New Password</label>
+                    <input
+                      type="password"
+                      className={styles.fieldInput}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                    />
+                  </div>
+                  {passwordError && <p className={styles.saveError}>{passwordError}</p>}
+                  <div className={styles.formActions}>
+                    <button type="submit" className={styles.saveBtn} disabled={passwordSaving}>
+                      {passwordSaving ? "Saving…" : "Update Password"}
+                    </button>
+                    <button type="button" className={styles.cancelBtn} onClick={() => setChangingPassword(false)} disabled={passwordSaving}>
                       Cancel
                     </button>
                   </div>

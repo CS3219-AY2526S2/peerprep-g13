@@ -13,4 +13,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || "";
+
+    if (
+      status === 401 &&
+      !window.location.pathname.startsWith("/auth") &&
+      !requestUrl.startsWith("/user/password")
+    ) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userId");
+      window.location.href = "/auth";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

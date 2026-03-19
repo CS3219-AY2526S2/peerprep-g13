@@ -7,4 +7,5 @@ export const userApi = {
   updateRole: (targetId, body) => api.patch(`/user/${targetId}/role`, body),
   dashboard: (userId) => api.get(`/user/dashboard/${userId}`),
   updateDashboard: (userId, body) => api.patch(`/user/dashboard/${userId}`, body),
+  changePassword: (body) => api.patch(`/user/password`, body),
 };

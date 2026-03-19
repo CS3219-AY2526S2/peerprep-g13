@@ -10,6 +10,25 @@ import {
 } from "@mantine/core";
 import { useAuth } from "../../context/ContextProvider";
 
+const validatePassword = (password) => {
+  if (password.length < 8) {
+    return "Password must be at least 8 characters.";
+  }
+  if (!/[A-Z]/.test(password)) {
+    return "Password must contain at least one uppercase letter.";
+  }
+  if (!/[a-z]/.test(password)) {
+    return "Password must contain at least one lowercase letter.";
+  }
+  if (!/[0-9]/.test(password)) {
+    return "Password must contain at least one digit.";
+  }
+  if (!/[!@#$%^&*()]/.test(password)) {
+    return "Password must contain at least one special character: ! @ # $ % ^ & * ( )";
+  }
+  return null;
+};
+
 export default function RegisterForm({ setIsLoginMode }) {
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -36,8 +55,9 @@ export default function RegisterForm({ setIsLoginMode }) {
       return;
     }
 
-    if (password.length < 8) {
-      setErr("Password must be at least 8 characters.");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setErr(passwordError);
       return;
     }
 
@@ -87,6 +107,21 @@ export default function RegisterForm({ setIsLoginMode }) {
             value={password}
             onChange={(event) => setPassword(event.currentTarget.value)}
           />
+
+          <Space h="xs" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {[
+              { label: "At least 8 characters", met: password.length >= 8 },
+              { label: "One uppercase letter (A–Z)", met: /[A-Z]/.test(password) },
+              { label: "One lowercase letter (a–z)", met: /[a-z]/.test(password) },
+              { label: "One digit (0–9)", met: /[0-9]/.test(password) },
+              { label: "One special character: ! @ # $ % ^ & * ( )", met: /[!@#$%^&*()]/.test(password) },
+            ].map(({ label, met }) => (
+              <Text key={label} size="xs" c={password.length === 0 ? "dimmed" : met ? "green" : "red"}>
+                {met ? "✓" : "·"} {label}
+              </Text>
+            ))}
+          </div>
 
           {err && (
             <>
