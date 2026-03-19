@@ -40,6 +40,22 @@ export default function RegisterForm({ setIsLoginMode }) {
       setErr("Password must be at least 8 characters.");
       return;
     }
+    if (!/[A-Z]/.test(password)) {
+      setErr("Password must contain at least one uppercase letter.");
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setErr("Password must contain at least one lowercase letter.");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setErr("Password must contain at least one digit.");
+      return;
+    }
+    if (!/[!@#$%^&*()]/.test(password)) {
+      setErr("Password must contain at least one special character: ! @ # $ % ^ & * ( )");
+      return;
+    }
 
     setLoading(true);
     try {
