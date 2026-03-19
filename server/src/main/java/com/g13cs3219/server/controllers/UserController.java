@@ -39,12 +39,14 @@ public class UserController {
         return ResponseEntity.ok(Map.of("data", response));
     }
     @GetMapping(path = "/user/dashboard/{userId}")
+    @PreAuthorize("authentication.principal.getUserId() == #userId or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getDashboard(@PathVariable Long userId) {
         DashboardResponse dashboard = userService.getDashboard(userId);
         return ResponseEntity.ok(Map.of("data", dashboard));
     }
 
     @PatchMapping(path = "/user/dashboard/{userId}")
+    @PreAuthorize("authentication.principal.getUserId() == #userId or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> updateDashboard(
             @PathVariable Long userId,
             @RequestBody UpdateDashboardRequest request) {
