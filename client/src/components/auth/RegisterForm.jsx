@@ -10,6 +10,25 @@ import {
 } from "@mantine/core";
 import { useAuth } from "../../context/ContextProvider";
 
+const validatePassword = (password) => {
+  if (password.length < 8) {
+    return "Password must be at least 8 characters.";
+  }
+  if (!/[A-Z]/.test(password)) {
+    return "Password must contain at least one uppercase letter.";
+  }
+  if (!/[a-z]/.test(password)) {
+    return "Password must contain at least one lowercase letter.";
+  }
+  if (!/[0-9]/.test(password)) {
+    return "Password must contain at least one digit.";
+  }
+  if (!/[!@#$%^&*()]/.test(password)) {
+    return "Password must contain at least one special character: ! @ # $ % ^ & * ( )";
+  }
+  return null;
+};
+
 export default function RegisterForm({ setIsLoginMode }) {
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -36,24 +55,9 @@ export default function RegisterForm({ setIsLoginMode }) {
       return;
     }
 
-    if (password.length < 8) {
-      setErr("Password must be at least 8 characters.");
-      return;
-    }
-    if (!/[A-Z]/.test(password)) {
-      setErr("Password must contain at least one uppercase letter.");
-      return;
-    }
-    if (!/[a-z]/.test(password)) {
-      setErr("Password must contain at least one lowercase letter.");
-      return;
-    }
-    if (!/[0-9]/.test(password)) {
-      setErr("Password must contain at least one digit.");
-      return;
-    }
-    if (!/[!@#$%^&*()]/.test(password)) {
-      setErr("Password must contain at least one special character: ! @ # $ % ^ & * ( )");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setErr(passwordError);
       return;
     }
 
