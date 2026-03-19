@@ -150,6 +150,11 @@ export default function DashboardPage() {
         newPassword: passwordForm.newPassword,
       });
       setPasswordSuccess("Password updated successfully.");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
       setChangingPassword(false);
     } catch (err) {
       setPasswordError(err?.response?.data?.message || "Failed to update password.");
