@@ -8,7 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -23,6 +25,13 @@ import java.util.stream.Collectors;
 public class QuestionService {
 
     private final QuestionRepository questionRepository;
+
+    private static final Map<String, Integer> DIFFICULTY_ORDER = Map.of(
+            "easy",   0,
+            "medium", 1,
+            "hard",   2
+    );
+
     /**
      * Retrieves all active questions, with optional filtering by topic and/or difficulty.
      *
@@ -32,7 +41,7 @@ public class QuestionService {
      *
      * @param topic      optional topic filter (case-insensitive), e.g. "Arrays"
      * @param difficulty optional difficulty filter (case-insensitive), e.g. "easy"
-     * @return list of matching active questions as response DTOs
+     * @return list of matching active questions as response DTOs, sorted by difficulty (easy → medium → hard)
      */
     public List<QuestionResponse> getQuestions(String topic, String difficulty) {
         List<Question> questions;
@@ -51,9 +60,12 @@ public class QuestionService {
         }
 
         return questions.stream()
+                .sorted(Comparator.comparingInt(q ->
+                        DIFFICULTY_ORDER.getOrDefault(q.getDifficulty().toLowerCase(), 99)))
                 .map(QuestionResponse::from)
                 .collect(Collectors.toList());
     }
+
     /**
      * Retrieves a single active question by its ID.
      *
@@ -67,6 +79,7 @@ public class QuestionService {
                         HttpStatus.NOT_FOUND, "Question not found with id: " + id));
         return QuestionResponse.from(question);
     }
+
     /**
      * Creates a new question and persists it to the database.
      *
@@ -105,6 +118,7 @@ public class QuestionService {
         Question saved = questionRepository.save(question);
         return saved.getQuestionId();
     }
+
     public void updateQuestion(Long id, QuestionRequest req, Long updatedBy) {
         Question question = questionRepository.findByQuestionIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -131,11 +145,12 @@ public class QuestionService {
         question.setUpdatedBy(updatedBy);
         questionRepository.save(question);
     }
+
     /**
      * Soft deletes a question by setting its isActive flag to false.
      *
      * The record is retained in the database to preserve referential integrity
-     * with the History table
+     * with the History table.
      * Soft-deleted questions are excluded from all other queries.
      *
      * @param id the ID of the question to delete
@@ -149,6 +164,7 @@ public class QuestionService {
         question.setIsActive(false);
         questionRepository.save(question);
     }
+
     /**
      * Used by Matching Service: returns one random question matching
      * the given topic + difficulty.
@@ -166,6 +182,7 @@ public class QuestionService {
                         HttpStatus.NOT_FOUND,
                         "No question found for topic='" + normalizedTopic + "' difficulty='" + difficulty + "'"));
     }
+
     /**
      * Validates that all required fields for creating a question are present and non-blank.
      *
@@ -181,6 +198,7 @@ public class QuestionService {
                     "title, topic, difficulty and prompt are required.");
         }
     }
+
     /**
      * Validates that the difficulty value is one of the accepted values.
      *
