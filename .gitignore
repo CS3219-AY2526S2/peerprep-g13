@@ -1,0 +1,8 @@
+# Maven build output
+question-service/target/
+user-service/target/
+*.jar
+*.jar.original
+
+# macOS
+.DS_Store
