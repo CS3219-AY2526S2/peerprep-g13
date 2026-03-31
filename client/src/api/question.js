@@ -1,4 +1,30 @@
-import api from "./axios";
+import axios from "axios";
+
+const questionApi_axios = axios.create({
+  baseURL: import.meta.env.VITE_QUESTION_API_BASE_URL || "http://localhost:8081",
+  timeout: 10000,
+});
+
+questionApi_axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+questionApi_axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    if (status === 401 && !window.location.pathname.startsWith("/auth")) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userId");
+      window.location.href = "/auth";
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Normalize server response fields to client field names:
 //   questionId -> id
@@ -28,7 +54,7 @@ function toServerBody(body) {
 
 export const questionApi = {
   list: async () => {
-    const res = await api.get("/questions");
+    const res = await questionApi_axios.get("/questions");
     return { data: { questions: (res.data.questions || []).map(normalizeQuestion) } };
   },
 
@@ -36,24 +62,24 @@ export const questionApi = {
     const params = {};
     if (body.topic) params.topic = body.topic;
     if (body.difficulty) params.difficulty = body.difficulty;
-    const res = await api.get("/questions", { params });
+    const res = await questionApi_axios.get("/questions", { params });
     return { data: { questions: (res.data.questions || []).map(normalizeQuestion) } };
   },
 
   getById: async (questionId) => {
-    const res = await api.get(`/questions/${questionId}`);
+    const res = await questionApi_axios.get(`/questions/${questionId}`);
     return { data: { question: normalizeQuestion(res.data.question) } };
   },
 
   create: async (body) => {
-    return api.post("/questions", toServerBody(body));
+    return questionApi_axios.post("/questions", toServerBody(body));
   },
 
   update: async (questionId, body) => {
-    return api.put(`/questions/${questionId}`, toServerBody(body));
+    return questionApi_axios.put(`/questions/${questionId}`, toServerBody(body));
   },
 
-  delete: (questionId) => api.delete(`/questions/${questionId}`),
+  delete: (questionId) => questionApi_axios.delete(`/questions/${questionId}`),
 
-  match: (body) => api.post("/questions/match", body),
+  match: (body) => questionApi_axios.post("/questions/match", body),
 };
