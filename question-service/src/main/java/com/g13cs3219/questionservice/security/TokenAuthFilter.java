@@ -59,6 +59,7 @@ public class TokenAuthFilter extends OncePerRequestFilter {
             Map<String, Object> data = (Map<String, Object>) verifyResponse.getBody().get("data");
             String email = (String) data.get("email");
             String roleStr = data.get("role").toString();
+            Long userId = (data.get("userId") instanceof Number num) ? num.longValue() : null;
             Role role = Role.valueOf(roleStr.toUpperCase());
 
             UsernamePasswordAuthenticationToken authentication =
@@ -67,6 +68,7 @@ public class TokenAuthFilter extends OncePerRequestFilter {
                             null,
                             Set.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
                     );
+            authentication.setDetails(userId);
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (HttpClientErrorException e) {

@@ -7,6 +7,8 @@ public class UpdateRoleRequest {
     private String newRole;
 
     public static void validateRequest(UpdateRoleRequest request) {
-        if (request.getNewRole() == null) throw new IllegalArgumentException("new role is required");
+        if (request == null || request.getNewRole() == null || request.getNewRole().isBlank()) {
+            throw new IllegalArgumentException("new role is required");
+        }
     }
 }

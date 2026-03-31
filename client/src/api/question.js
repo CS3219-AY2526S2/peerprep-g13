@@ -1,29 +1,7 @@
-import axios from "axios";
+import { createApiInstance } from "./axios";
 
-const questionApi_axios = axios.create({
-  baseURL: import.meta.env.VITE_QUESTION_API_BASE_URL || "http://localhost:8081",
-  timeout: 10000,
-});
-
-questionApi_axios.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-questionApi_axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status = error.response?.status;
-    if (status === 401 && !window.location.pathname.startsWith("/auth")) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("userId");
-      window.location.href = "/auth";
-    }
-    return Promise.reject(error);
-  }
+const questionApi_axios = createApiInstance(
+  import.meta.env.VITE_QUESTION_API_BASE_URL || "http://localhost:8081"
 );
 
 // Normalize server response fields to client field names:

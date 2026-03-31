@@ -1,5 +1,6 @@
 package com.g13cs3219.userservice.controllers;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class AuthController {
     @PostMapping("/user/auth/register")
     public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest request) {
         RegisterResponse response = authService.register(request);
-        return ResponseEntity.created(null).body(Map.of("data", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("data", response));
     }
 
     @PostMapping("/user/auth/login")
@@ -36,8 +37,8 @@ public class AuthController {
 
     @PostMapping("/user/auth/logout")
     public ResponseEntity<Map<String, Object>> logout(Authentication authentication) {
-        authService.logout(authentication);
-        return ResponseEntity.ok(Map.of("message", "Logout successful"));
+        LogoutResponse response = authService.logout(authentication);
+        return ResponseEntity.ok(Map.of("data", response));
     }
 
     @GetMapping("/user/auth")

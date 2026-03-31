@@ -32,6 +32,10 @@ public class UserService {
 
     @Transactional
     public UpdatePasswordResponse updatePassword(Authentication authentication, UpdatePasswordRequest request) {
+        if (request == null || request.getNewPassword() == null || request.getNewPassword().isBlank()
+                || request.getCurrentPassword() == null || request.getCurrentPassword().isBlank()) {
+            throw new IllegalArgumentException("currentPassword and newPassword are required");
+        }
         passwordService.validatePassword(request.getNewPassword());
         AuthenticationValidator.validateAuthentication(authentication);
         User user = (User) authentication.getPrincipal();

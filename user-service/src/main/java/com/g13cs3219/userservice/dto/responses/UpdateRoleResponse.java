@@ -9,6 +9,6 @@ public class UpdateRoleResponse {
     private String newRole;
 
     public static UpdateRoleResponse buildResponse(Role role) {
-        return UpdateRoleResponse.builder().message("User role updated successfully.").newRole(role.toString()).build();
+        return UpdateRoleResponse.builder().message("User role updated successfully.").newRole(role.getId()).build();
     }
 }
