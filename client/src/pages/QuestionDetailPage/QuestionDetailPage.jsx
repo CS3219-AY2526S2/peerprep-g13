@@ -10,6 +10,11 @@ export default function QuestionDetailPage() {
   const navigate = useNavigate();
   const { isQuestionManager } = useAuth();
 
+  function startCollaboration() {
+    const roomId = crypto.randomUUID().slice(0, 8);
+    navigate(`/collaborate/${roomId}?questionId=${id}`);
+  }
+
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -67,9 +72,14 @@ export default function QuestionDetailPage() {
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
-        <button className={styles.backBtn} onClick={() => navigate("/questions")}>
-          ← Back to Questions
-        </button>
+        <div className={styles.topBar}>
+          <button className={styles.backBtn} onClick={() => navigate("/questions")}>
+            ← Back to Questions
+          </button>
+          <button className={styles.collaborateBtn} onClick={startCollaboration}>
+            Collaborate
+          </button>
+        </div>
 
         <div className={styles.card}>
           <div className={styles.titleRow}>

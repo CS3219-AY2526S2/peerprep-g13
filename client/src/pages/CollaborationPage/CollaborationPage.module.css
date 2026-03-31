@@ -1,0 +1,281 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 57px);
+  background: #f7f8fa;
+  overflow: hidden;
+}
+
+/* ── Room full ── */
+.fullScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  text-align: center;
+  padding: 40px;
+}
+
+.roomFullTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.roomFullSub {
+  font-size: 0.875rem;
+  color: #6c6c6c;
+  margin: 0 0 8px;
+  max-width: 360px;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: #0075ff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.backBtn:hover {
+  text-decoration: underline;
+}
+
+.roomInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.roomId {
+  font-size: 0.8rem;
+  color: #6c6c6c;
+  font-family: monospace;
+}
+
+.statusOnline {
+  font-size: 0.8rem;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.statusOffline {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.peers {
+  font-size: 0.8rem;
+  color: #6c6c6c;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.langSelect {
+  padding: 6px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+}
+
+.langSelect:focus {
+  border-color: #00b8a3;
+}
+
+.copyBtn {
+  padding: 6px 14px;
+  background: #00b8a3;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.copyBtn:hover {
+  background: #00a593;
+}
+
+/* ── Body ── */
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Question Panel ── */
+.questionPanel {
+  width: 38%;
+  min-width: 260px;
+  max-width: 480px;
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.topicRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.topicChip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  margin: 14px 0;
+}
+
+.sectionLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6c6c6c;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.prompt {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.list li {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.noQuestion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  gap: 8px;
+  padding: 40px 0;
+}
+
+.noQuestionTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #6c6c6c;
+  margin: 0;
+}
+
+.noQuestionSub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* ── Editor Panel ── */
+.editorPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.editor {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+.editor :global(.cm-editor) {
+  height: 100%;
+  background: #1e1e1e;
+}
+
+.editor :global(.cm-scroller) {
+  overflow: auto;
+}
+
+.editor :global(.cm-gutters) {
+  background: #1e1e1e;
+  border-right: 1px solid #333;
+  color: #555;
+}
+
+.editor :global(.cm-activeLineGutter) {
+  background: #2a2a2a;
+}
+
+.editor :global(.cm-activeLine) {
+  background: #2a2a2a;
+}
