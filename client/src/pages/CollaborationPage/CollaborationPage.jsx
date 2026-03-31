@@ -7,6 +7,7 @@ import { EditorView, lineNumbers, highlightActiveLine, keymap } from "@codemirro
 import { EditorState } from "@codemirror/state";
 import { defaultKeymap, historyKeymap, history, indentWithTab } from "@codemirror/commands";
 import { questionApi } from "../../api/question";
+import { useAuth } from "../../context/ContextProvider";
 import DifficultyBadge from "../../components/questions/DifficultyBadge";
 import styles from "./CollaborationPage.module.css";
 
@@ -15,14 +16,17 @@ export default function CollaborationPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const questionId = searchParams.get("questionId");
+  const { user } = useAuth(); // kept in state so userRef stays current
 
   const [question, setQuestion] = useState(null);
   const [connected, setConnected] = useState(false);
   const [roomFull, setRoomFull] = useState(false);
-  const [peers, setPeers] = useState(0);
+  const [roomUsers, setRoomUsers] = useState([]);
   const [copied, setCopied] = useState(false);
 
   const editorRef = useRef(null);
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
 
   useEffect(() => {
     if (!questionId) return;
@@ -54,18 +58,19 @@ export default function CollaborationPage() {
 
       // Register listener before setLocalStateField so the first change event is captured
       provider.awareness.on("change", () => {
-        // Count unique userIds — same user with multiple tabs = 1 person
-        const uniqueUserIds = new Set(
-          [...provider.awareness.getStates().values()]
-            .map((s) => s?.user?.userId)
-            .filter(Boolean)
-        );
-        setPeers(uniqueUserIds.size);
+        // Deduplicate by userId — same user with multiple tabs = 1 person
+        const seen = new Map();
+        for (const s of provider.awareness.getStates().values()) {
+          const u = s?.user;
+          if (u?.userId && !seen.has(u.userId)) seen.set(u.userId, u);
+        }
+        setRoomUsers([...seen.values()]);
         if (provider.wsconnected) setConnected(true);
       });
 
       const userId = localStorage.getItem("userId") || "anonymous";
-      provider.awareness.setLocalStateField("user", { userId });
+      const username = userRef.current?.username || userId;
+      provider.awareness.setLocalStateField("user", { userId, username });
 
       provider.on("status", ({ status }) => {
         if (status === "connected") setConnected(true);
@@ -146,9 +151,14 @@ export default function CollaborationPage() {
           <span className={connected ? styles.statusOnline : styles.statusOffline}>
             {connected ? "Connected" : "Connecting…"}
           </span>
-          <span className={styles.peers}>
-            {peers} user{peers !== 1 ? "s" : ""} online
-          </span>
+          <div className={styles.userChips}>
+            {roomUsers.map((u) => (
+              <span key={u.userId} className={styles.userChip}>
+                <span className={styles.userAvatar}>{u.username[0].toUpperCase()}</span>
+                {u.username}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className={styles.controls}>
