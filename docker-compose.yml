@@ -1,0 +1,99 @@
+version: "3.9"
+
+networks:
+  peerprep-net:
+    driver: bridge
+
+volumes:
+  user-db-data:
+  question-db-data:
+
+services:
+
+  user-db:
+    image: postgres:16-alpine
+    container_name: peerprep-user-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB:       ${USER_DB_NAME:-user_db}
+      POSTGRES_USER:     ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    networks:
+      - peerprep-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${USER_DB_NAME:-user_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  question-db:
+    image: postgres:16-alpine
+    container_name: peerprep-question-db
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB:       ${QUESTION_DB_NAME:-question_db}
+      POSTGRES_USER:     ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - question-db-data:/var/lib/postgresql/data
+    networks:
+      - peerprep-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${QUESTION_DB_NAME:-question_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: peerprep-user-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL:             jdbc:postgresql://user-db:5432/${USER_DB_NAME:-user_db}
+      DB_USERNAME:                       ${DB_USERNAME:-postgres}
+      DB_PASSWORD:                       ${DB_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO:     none
+      SPRING_FLYWAY_ENABLED:             true
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+      SPRING_FLYWAY_BASELINE_VERSION:    "0"
+      JWT_SECRET:                        ${JWT_SECRET:?JWT_SECRET must be set}
+      CORS_ALLOWED_ORIGINS:              ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - peerprep-net
+    restart: unless-stopped
+
+  question-service:
+    build:
+      context: ./question-service
+      dockerfile: Dockerfile
+    container_name: peerprep-question-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL:             jdbc:postgresql://question-db:5432/${QUESTION_DB_NAME:-question_db}
+      DB_USERNAME:                       ${DB_USERNAME:-postgres}
+      DB_PASSWORD:                       ${DB_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO:     none
+      SPRING_FLYWAY_ENABLED:             true
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+      SPRING_FLYWAY_BASELINE_VERSION:    "0"
+      USER_SERVICE_URL:                  http://user-service:8080
+      CORS_ALLOWED_ORIGINS:              ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+    depends_on:
+      question-db:
+        condition: service_healthy
+    networks:
+      - peerprep-net
+    restart: unless-stopped
