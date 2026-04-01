@@ -5,7 +5,6 @@ COPY pom.xml ./
 COPY .mvn/ .mvn/
 COPY mvnw ./
 
-# Fix Windows CRLF line endings
 RUN apt-get update && apt-get install -y dos2unix \
     && dos2unix mvnw \
     && chmod +x mvnw \
@@ -13,8 +12,9 @@ RUN apt-get update && apt-get install -y dos2unix \
 
 RUN ./mvnw dependency:go-offline -B
 
+ARG SKIP_TESTS=false
 COPY src ./src
-RUN ./mvnw package -DskipTests -B
+RUN if [ "$SKIP_TESTS" = "true" ]; then ./mvnw package -DskipTests -B; else ./mvnw package -B; fi
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
