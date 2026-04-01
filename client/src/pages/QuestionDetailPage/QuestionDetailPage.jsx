@@ -12,7 +12,7 @@ export default function QuestionDetailPage() {
 
   function startCollaboration() {
     const roomId = crypto.randomUUID().slice(0, 8);
-    navigate(`/collaborate/${roomId}?questionId=${id}`);
+    navigate(`/collaborate/${roomId}?questionId=${encodeURIComponent(id ?? "")}`);
   }
 
   const [question, setQuestion] = useState(null);

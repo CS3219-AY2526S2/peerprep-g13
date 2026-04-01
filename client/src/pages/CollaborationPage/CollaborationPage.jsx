@@ -26,14 +26,16 @@ export default function CollaborationPage() {
 
   const editorRef = useRef(null);
   const userRef = useRef(user);
+  const copiedTimerRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => () => clearTimeout(copiedTimerRef.current), []);
 
   useEffect(() => {
     if (!questionId) return;
     questionApi
       .getById(questionId)
       .then((res) => setQuestion(res.data.question))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load question", questionId, err));
   }, [questionId]);
 
   useEffect(() => {
@@ -46,8 +48,12 @@ export default function CollaborationPage() {
     // Defer setup so React StrictMode's double-invoke cleanup cancels before anything is created
     const timer = setTimeout(() => {
       ydoc = new Y.Doc();
-      const wsUrl =
+      let wsUrl =
         import.meta.env.VITE_COLLAB_SERVICE_WS_URL || "ws://localhost:4000";
+      // Enforce encrypted WebSocket in non-local environments
+      if (!wsUrl.startsWith("wss://") && !wsUrl.includes("localhost") && !wsUrl.includes("127.0.0.1")) {
+        wsUrl = wsUrl.replace(/^ws:\/\//, "wss://");
+      }
       const token = localStorage.getItem("accessToken");
 
       provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
@@ -116,9 +122,11 @@ export default function CollaborationPage() {
   }, [roomId]);
 
   function copyRoomLink() {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+    }).catch((err) => console.error("Failed to copy link", err));
   }
 
   const topics = question?.topics ?? (question?.topic ? [question.topic] : []);
