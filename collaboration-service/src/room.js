@@ -18,7 +18,9 @@ export class YjsRoom {
     // When the doc is updated by any client, broadcast the update to all others.
     // `origin` is the ws that triggered the update (passed via transactionOrigin).
     this.doc.on("update", (update, origin) => {
-      console.log(`[Room ${this.roomId}] doc updated, broadcasting to ${this.clients.size - 1} other client(s)`);
+      const originUserId = origin ? this.clients.get(origin)?.userId : "unknown";
+      const recipients = [...this.clients.keys()].filter((ws) => ws !== origin && ws.readyState === 1);
+      console.log(`[Room ${this.roomId}] doc update from "${originUserId}", broadcasting to ${recipients.length} other client(s)`);
       const encoder = encoding.createEncoder();
       encoding.writeVarUint(encoder, MESSAGE_SYNC);
       syncProtocol.writeUpdate(encoder, update);
@@ -30,8 +32,16 @@ export class YjsRoom {
       });
     });
 
-    // When awareness changes, broadcast to all connected clients.
-    this.awareness.on("update", ({ added, updated, removed }) => {
+    // When awareness changes, track clientIds per socket and broadcast.
+    this.awareness.on("update", ({ added, updated, removed }, origin) => {
+      // Map the awareness clientIds back to the originating WebSocket
+      if (origin && this.clients.has(origin)) {
+        const clientMeta = this.clients.get(origin);
+        [...added, ...updated].forEach((id) => clientMeta.awarenessClientIds.add(id));
+      }
+      const allStates = this.awareness.getStates();
+      const userIds = [...allStates.values()].map((s) => s?.user?.userId).filter(Boolean);
+      console.log(`[Room ${this.roomId}] awareness update — added:${added.length} updated:${updated.length} removed:${removed.length} | all userIds in room: [${userIds.join(", ")}]`);
       const changedClients = added.concat(updated, removed);
       const encoder = encoding.createEncoder();
       encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
@@ -53,10 +63,9 @@ export class YjsRoom {
    * Adds a client and performs initial Yjs sync.
    */
   addClient(ws, userId) {
-    this.clients.set(ws, { userId });
-    console.log(
-      `[Room ${this.roomId}] User ${userId} joined. Total: ${this.clients.size}`
-    );
+    this.clients.set(ws, { userId, awarenessClientIds: new Set() });
+    const allUsers = [...this.clients.values()].map((m) => m.userId);
+    console.log(`[Room ${this.roomId}] ✓ User "${userId}" joined. All connections: [${allUsers.join(", ")}] (${this.clients.size} total)`);
 
     // Send sync step 1 so the new client can catch up to the current doc state
     const syncEncoder = encoding.createEncoder();
@@ -93,8 +102,9 @@ export class YjsRoom {
       encoding.writeVarUint(encoder, MESSAGE_SYNC);
       // Pass `ws` as transactionOrigin so the doc.on('update') handler
       // knows which client sent this and can skip broadcasting back to them
+      const userId = this.clients.get(ws)?.userId ?? "unknown";
       const syncType = syncProtocol.readSyncMessage(decoder, encoder, this.doc, ws);
-      console.log(`[Room ${this.roomId}] sync subtype=${syncType} (0=step1, 1=step2, 2=update)`);
+      console.log(`[Room ${this.roomId}] sync from "${userId}" subtype=${syncType} (0=step1, 1=step2, 2=update)`);
       // Send response (e.g. sync step 2) back to this client if there's data
       if (encoding.length(encoder) > 1) {
         ws.send(encoding.toUint8Array(encoder));
@@ -114,15 +124,16 @@ export class YjsRoom {
   removeClient(ws) {
     const client = this.clients.get(ws);
     if (client) {
-      awarenessProtocol.removeAwarenessStates(
-        this.awareness,
-        [this.doc.clientID],
-        "client disconnected"
-      );
+      if (client.awarenessClientIds.size > 0) {
+        awarenessProtocol.removeAwarenessStates(
+          this.awareness,
+          Array.from(client.awarenessClientIds),
+          "client disconnected"
+        );
+      }
       this.clients.delete(ws);
-      console.log(
-        `[Room ${this.roomId}] User ${client.userId} left. Remaining: ${this.clients.size}`
-      );
+      const remaining = [...this.clients.values()].map((m) => m.userId);
+      console.log(`[Room ${this.roomId}] User "${client.userId}" left. Remaining: [${remaining.join(", ")}] (${this.clients.size})`);
     }
     return this.clients.size === 0;
   }

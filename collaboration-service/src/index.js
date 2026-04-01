@@ -18,4 +18,5 @@ setupWebSocketServer(httpServer);
 
 httpServer.listen(PORT, () => {
   console.log(`[Server] Collaboration service running on port ${PORT}`);
+  console.log(`[Server] JWT_SECRET configured: ${!!process.env.JWT_SECRET}`);
 });

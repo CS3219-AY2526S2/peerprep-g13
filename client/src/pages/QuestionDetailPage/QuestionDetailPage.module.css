@@ -9,6 +9,28 @@
   margin: 0 auto;
 }
 
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.collaborateBtn {
+  padding: 7px 18px;
+  background: #0075ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.collaborateBtn:hover {
+  background: #0062d6;
+}
+
 .backBtn {
   background: none;
   border: none;
@@ -17,7 +39,6 @@
   font-size: 0.875rem;
   font-weight: 500;
   padding: 0;
-  margin-bottom: 20px;
   display: inline-flex;
   align-items: center;
   gap: 4px;

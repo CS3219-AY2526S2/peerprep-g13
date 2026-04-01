@@ -15,8 +15,15 @@ function getOrCreateRoom(roomId) {
 function deleteRoomIfEmpty(roomId) {
   const room = rooms.get(roomId);
   if (room && room.clients.size === 0) {
-    room.destroy();
-    rooms.delete(roomId);
+    // Grace period: keep room alive for 30s so a page reload doesn't lose content
+    setTimeout(() => {
+      const r = rooms.get(roomId);
+      if (r && r.clients.size === 0) {
+        r.destroy();
+        rooms.delete(roomId);
+        console.log(`[Room ${roomId}] Destroyed after grace period.`);
+      }
+    }, 30_000);
   }
 }
 
@@ -29,9 +36,12 @@ export function setupWebSocketServer(httpServer) {
     // y-websocket puts the room name in the path: ws://host/<roomId>?token=...
     const roomId = url.pathname.slice(1); // strip leading "/"
 
+    console.log(`[WS] Incoming connection — roomId="${roomId}" hasToken=${!!token}`);
+
     // Validate inputs
     if (!token || !roomId) {
       ws.close(4000, "Missing token or roomId");
+      console.log(`[WS] Rejected: missing token or roomId`);
       return;
     }
 
@@ -39,14 +49,28 @@ export function setupWebSocketServer(httpServer) {
     const payload = verifyToken(token);
     if (!payload) {
       ws.close(4001, "Invalid or expired token");
+      console.log(`[WS] Rejected: JWT verification failed (check JWT_SECRET matches user-service)`);
       return;
     }
 
     const userId = payload.sub; // Spring Boot sets sub = email
-    console.log(`[WS] User ${userId} connecting to room ${roomId}`);
+    console.log(`[WS] ✓ User "${userId}" authenticated, joining room "${roomId}"`);
 
     const room = getOrCreateRoom(roomId);
+
+    // Count unique userIds already in the room (same userId = same person, allow reconnects)
+    const uniqueUsers = new Set([...room.clients.values()].map((m) => m.userId));
+    console.log(`[WS] Room "${roomId}" current unique users: [${[...uniqueUsers].join(", ")}]`);
+
+    if (!uniqueUsers.has(userId) && uniqueUsers.size >= 2) {
+      ws.close(4003, "Room is full (max 2 users)");
+      console.log(`[WS] Room "${roomId}" is full. Rejected user "${userId}"`);
+      return;
+    }
+
     room.addClient(ws, userId);
+    const newUniqueUsers = new Set([...room.clients.values()].map((m) => m.userId));
+    console.log(`[WS] Room "${roomId}" users after join: [${[...newUniqueUsers].join(", ")}] (${newUniqueUsers.size} unique)`);
 
     ws.on("message", (message) => {
       try {

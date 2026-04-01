@@ -11,6 +11,7 @@ import RequireAuth from "./auth/RequiredAuth";
 import RequiredAdmin from "./auth/RequiredAdmin";
 import RequiredQuestionManager from "./auth/RequiredQuestionManager";
 import AdminUsersPage from "./pages/AdminUsersPage/AdminUsersPage";
+import CollaborationPage from "./pages/CollaborationPage/CollaborationPage";
 import Navbar from "./components/Navbar/Navbar";
 
 function UnauthorizedPage() {
@@ -78,6 +79,15 @@ export default function App() {
               <RequiredAdmin>
                 <AdminUsersPage />
               </RequiredAdmin>
+            }
+          />
+
+          <Route
+            path="/collaborate/:roomId"
+            element={
+              <RequireAuth>
+                <CollaborationPage />
+              </RequireAuth>
             }
           />
         </Routes>
