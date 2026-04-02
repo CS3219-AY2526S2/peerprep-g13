@@ -6,3 +6,17 @@ services:
     restart: always
     environment:
       POSTGRES_PASSWORD: password
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
