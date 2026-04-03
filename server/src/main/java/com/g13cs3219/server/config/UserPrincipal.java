@@ -3,14 +3,14 @@ package com.g13cs3219.server.config;
 import java.security.Principal;
 
 public class UserPrincipal implements Principal {
-    private final String name;
+    private final String userId;
 
-    public UserPrincipal(String name) {
-        this.name = name;
+    public UserPrincipal(String userId) {
+        this.userId = userId;
     }
 
     @Override
     public String getName() {
-        return name;
+        return userId;
     }
 }
