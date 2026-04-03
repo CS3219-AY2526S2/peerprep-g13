@@ -2,6 +2,7 @@ package com.g13cs3219.server.services;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,8 @@ public class ProducerService {
         rabbitTemplate.convertAndSend(exchangeName, routingKey, request);
     }
 
-    public void sendCancelRequest(int userId) {
-        rabbitTemplate.convertAndSend(exchangeName, routingKey, userId);
+    public void sendCancelRequest(JoinRequest request) {
+        request.setType("cancel");
+        rabbitTemplate.convertAndSend(exchangeName, routingKey, request);
     }
 }
