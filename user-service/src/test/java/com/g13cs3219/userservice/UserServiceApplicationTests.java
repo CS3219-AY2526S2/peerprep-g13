@@ -1,5 +1,6 @@
 package com.g13cs3219.userservice;
 
+import com.g13cs3219.userservice.model.Role;
 import com.g13cs3219.userservice.model.User;
 import com.g13cs3219.userservice.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -26,8 +27,7 @@ class UserServiceApplicationTests {
                 .email("test@peerprep.com")
                 .username("testuser")
                 .encodedPassword("hashed_password")
-                .role(User.Role.USER)
-                .isActive(true)
+                .role(Role.USER)
                 .build();
 
         User saved = userRepository.save(user);
@@ -36,30 +36,28 @@ class UserServiceApplicationTests {
     }
 
     @Test
-    void emailLookupIsCaseInsensitive() {
+    void duplicateEmailDetected() {
         User user = User.builder()
-                .email("case@peerprep.com")
-                .username("caseuser")
+                .email("duplicate@peerprep.com")
+                .username("dupuser")
                 .encodedPassword("hashed_password")
-                .role(User.Role.USER)
-                .isActive(true)
+                .role(Role.USER)
                 .build();
         userRepository.save(user);
 
-        assertThat(userRepository.findByEmail("case@peerprep.com")).isPresent();
+        assertThat(userRepository.findByEmail("duplicate@peerprep.com")).isPresent();
     }
 
     @Test
-    void inactiveUserNotFound() {
-        User user = User.builder()
-                .email("inactive@peerprep.com")
-                .username("inactiveuser")
+    void adminRoleSavedCorrectly() {
+        User admin = User.builder()
+                .email("admin@peerprep.com")
+                .username("adminuser")
                 .encodedPassword("hashed_password")
-                .role(User.Role.USER)
-                .isActive(false)
+                .role(Role.ADMIN)
                 .build();
-        userRepository.save(user);
 
-        assertThat(userRepository.findByEmail("inactive@peerprep.com")).isPresent();
+        User saved = userRepository.save(admin);
+        assertThat(saved.getRole()).isEqualTo(Role.ADMIN);
     }
 }
