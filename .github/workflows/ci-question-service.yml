@@ -1,0 +1,62 @@
+name: CI — question-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "question-service/**"
+      - ".github/workflows/ci-question-service.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "question-service/**"
+      - ".github/workflows/ci-question-service.yml"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/peerprep-question-service
+
+jobs:
+  build-test-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Build and test
+        working-directory: question-service
+        run: ./mvnw verify -B
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        if: github.event_name == 'push'
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./question-service
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

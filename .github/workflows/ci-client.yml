@@ -1,0 +1,40 @@
+name: CI — client
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+      - ".github/workflows/ci-client.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/**"
+      - ".github/workflows/ci-client.yml"
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Build
+        working-directory: client
+        env:
+          VITE_API_BASE_URL: http://localhost:8080
+          VITE_QUESTION_API_BASE_URL: http://localhost:8081
+          VITE_COLLAB_SERVICE_WS_URL: ws://localhost:4000
+        run: npm run build

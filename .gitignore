@@ -3,7 +3,7 @@ question-service/target/
 user-service/target/
 *.jar
 *.jar.original
-
+.env
 # macOS
 .DS_Store
 client/.env
