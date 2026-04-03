@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Component;
 
 import com.g13cs3219.server.dto.requests.JoinRequest;
+import com.g13cs3219.server.dto.responses.MatchResult;
 import com.g13cs3219.server.services.MessageService;
 
 import lombok.AllArgsConstructor;
@@ -53,41 +54,41 @@ public class MatchingPool {
      * @param difficulty the difficulty level the user wants to be matched on
      * @return an Optional containing the matched user ID if a match is found, or an empty Optional if no match is found
      */
-    public Optional<String> findMatch(String topic, String difficulty, String type) {
+    public Optional<MatchResult> findMatch(int userId, String topic, String difficulty, String type) {
         String key = buildKey(topic, difficulty);
 
         // First try to find an exact match
-        Optional<String> match = findExactMatch(key);
+        Optional<MatchResult> match = findExactMatch(userId, key);
         if (match.isPresent()) {
             return match;
         }
 
         // If no exact match, try to find a match with the same difficulty
-        match = findSameDifficultyMatch(difficulty);
+        match = findSameDifficultyMatch(userId, difficulty);
         if (type.equals("match") || match.isPresent()) {
             return match;
         }
 
         // If still no match, try to find a match with the same topic but lower difficulty
-        match = findExactMatch(getLowerDifficulty(difficulty));
+        match = findExactMatch(userId, getLowerDifficulty(difficulty));
         if (match.isPresent()) {
             return match;
         }
 
         // If still no match, try to find a match with the same topic but higher difficulty
-        match = findExactMatch(getHigherDifficulty(difficulty));
+        match = findExactMatch(userId, getHigherDifficulty(difficulty));
         if (match.isPresent()) {
             return match;
         }
 
         // If still no match, try to find a match with the different topic but lower difficulty
-        match = findSameDifficultyMatch(getLowerDifficulty(difficulty));
+        match = findSameDifficultyMatch(userId, getLowerDifficulty(difficulty));
         if (match.isPresent()) {
             return match;
         }
 
         // If still no match, try to find a match with the different topic but higher difficulty
-        match = findSameDifficultyMatch(getHigherDifficulty(difficulty));
+        match = findSameDifficultyMatch(userId, getHigherDifficulty(difficulty));
         return match;
     }
 
@@ -98,27 +99,29 @@ public class MatchingPool {
      *                    matching pool
      */
     public void handleTimeouts(double currentTime) {
-        Set<ZSetOperations.TypedTuple<String>> users = redisTemplate
-                .opsForZSet()
-                .rangeWithScores("*", (long) Double.NEGATIVE_INFINITY, (long) (currentTime - 30000));
-        // 30 seconds timeout
+        Set<String> keys = redisTemplate.keys("queue:*");
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
 
-        if (users != null) {
-            for (ZSetOperations.TypedTuple<String> user : users) {
-                String userId = user.getValue();
-                messageService.sendTimeoutMessage(userId);
-                redisTemplate.opsForZSet().remove("*", userId);
+        for (String key : keys) {
+            Set<ZSetOperations.TypedTuple<String>> timedOutUsers = redisTemplate
+                    .opsForZSet()
+                    .rangeByScoreWithScores(key, 0, currentTime - 30000);
+
+            if (timedOutUsers != null) {
+                for (ZSetOperations.TypedTuple<String> user : timedOutUsers) {
+                    String userId = user.getValue();
+
+                    System.out.println("User " + userId + " has timed out");
+                    messageService.sendTimeoutMessage(userId);
+                    redisTemplate.opsForZSet().remove(key, userId);
+                }
             }
         }
     }
 
-    /**
-     * Find an exact match for the specified key.
-     *
-     * @param key the key to search for an exact match
-     * @return an Optional containing the matched user ID if a match is found, or an empty Optional if no match is found
-     */
-    private Optional<String> findExactMatch(String key) {
+    private Optional<MatchResult> findExactMatch(int userId, String key) {
         if (key == null) {
             return Optional.empty();
         }
@@ -131,25 +134,24 @@ public class MatchingPool {
         String match = candidates.iterator().next();
         if (match != null) {
             redisTemplate.opsForZSet().remove(key, match);
-            return Optional.of(match);
+            return Optional.of(MatchResult.builder()
+                    .userId1(userId)
+                    .userId2(Integer.parseInt(match))
+                    .matchInfo(key.split(":")[1] + "-" + key.split(":")[2])
+                    .build()
+            );
         }
         return Optional.empty();
     }
 
-    /**
-     * Find a match with the same difficulty level for the specified difficulty.
-     *
-     * @param difficulty the difficulty level to search for a match
-     * @return an Optional containing the matched user ID if a match is found, or an empty Optional if no match is found
-     */
-    private Optional<String> findSameDifficultyMatch(String difficulty) {
+    private Optional<MatchResult> findSameDifficultyMatch(int userId, String difficulty) {
         Set<String> keys = redisTemplate.keys("*" + difficulty + "*");
         if (keys == null || keys.isEmpty()) {
             return Optional.empty();
         }
 
         String key = keys.iterator().next();
-        return findExactMatch(key);
+        return findExactMatch(userId, key);
     }
 
     private String getHigherDifficulty(String difficulty) {

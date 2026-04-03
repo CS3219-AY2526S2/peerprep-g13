@@ -20,6 +20,9 @@ public class ConsumerService {
     public void processRequest(JoinRequest request) {
         if (request.getType().equals("cancel")) {
             matchingPool.removeUser(request);
+        } else if (request.getType().equals("loose-match")) {
+            matchingPool.removeUser(request);
+            handleJoinRequest(request);
         } else {
             handleJoinRequest(request);
         }
@@ -33,17 +36,9 @@ public class ConsumerService {
      */
     private void handleJoinRequest(JoinRequest request) {
         matchingPool
-                .findMatch(request.getTopic(), request.getDifficulty(), request.getType())
+                .findMatch(request.getUserId(), request.getTopic(), request.getDifficulty(), request.getType())
                 .ifPresentOrElse(
-                        matchUserId -> {
-                            MatchResult match = new MatchResult(
-                                    request.getUserId(),
-                                    Integer.parseInt(matchUserId),
-                                    request.getTopic() + "-" + request.getDifficulty()
-                            );
-
-                            messageService.sendMatchFoundMessage(match);
-                        },
+                        messageService::sendMatchFoundMessage,
                         () -> {
                             matchingPool.addUser(request);
                         });

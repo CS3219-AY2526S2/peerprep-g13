@@ -28,7 +28,7 @@ public class MatchController {
     }
 
     @GetMapping("/leave")
-    public void dequeue(@RequestBody int userId) {
-        producerService.sendCancelRequest(userId);
+    public void dequeue(@RequestBody JoinRequest request) {
+        producerService.sendCancelRequest(request);
     }
 }
