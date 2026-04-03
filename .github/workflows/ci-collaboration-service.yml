@@ -49,7 +49,6 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        if: github.event_name == 'push'
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
