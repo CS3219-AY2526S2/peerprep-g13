@@ -97,3 +97,17 @@ services:
     networks:
       - peerprep-net
     restart: unless-stopped
+
+  collaboration-service:
+    build:
+      context: ./collaboration-service
+      dockerfile: Dockerfile
+    container_name: peerprep-collaboration-service
+    ports:
+      - "4000:4000"
+    environment:
+      PORT:       4000
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+    networks:
+      - peerprep-net
+    restart: unless-stopped
