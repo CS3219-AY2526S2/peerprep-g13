@@ -35,12 +35,12 @@ public class MessageService {
         messagingTemplate.convertAndSendToUser(
             match.getUserId1() + "",
             "/queue/match",
-            match.getMatchInfo()
+            match
         );
         messagingTemplate.convertAndSendToUser(
             match.getUserId2() + "",
             "/queue/match",
-            match.getMatchInfo()
+            match
         );
     }
 
