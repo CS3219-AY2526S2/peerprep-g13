@@ -15,12 +15,13 @@ import lombok.AllArgsConstructor;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketAuthChannelInterceptor authInterceptor;
+    private final UserHandshakeHandler userHandshakeHandler;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry
                 .addEndpoint("/ws")
-                .setHandshakeHandler(new UserHandshakeHandler())
+                .setHandshakeHandler(userHandshakeHandler)
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
