@@ -40,18 +40,23 @@ export default function MatchPage() {
     return () => clearInterval(interval);
   }, [isMatching]);
 
-  const handleMatch = (e) => {
+  const handleMatch = async (e) => {
     e.preventDefault();
+    setErr('');
     
-    matchingApi.match({ 
-      userId: user.userId, 
-      topic: topic, 
-      difficulty: difficulty 
-    });
-    
-    setIsMatching(true);
-    setTimer(30);
-    connect();
+    try {
+      await matchingApi.match({ 
+        userId: user.userId, 
+        topic: topic, 
+        difficulty: difficulty 
+      });
+      
+      setIsMatching(true);
+      setTimer(30);
+      connect();
+    } catch (error) {
+      setErr(error?.message || 'Unable to start matching. Please try again.');
+    }
   };
 
   const connect = () => {
