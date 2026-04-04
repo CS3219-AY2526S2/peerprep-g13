@@ -1,6 +1,6 @@
 package com.g13cs3219.matching_service.controllers;
 
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,17 +17,17 @@ public class MatchController {
 
     private ProducerService producerService;
 
-    @GetMapping("/join")
+    @PostMapping("/join")
     public void enqueue(@RequestBody JoinRequest request) {
         producerService.sendJoinRequest(request);
     }
 
-    @GetMapping("/join/loose")
+    @PostMapping("/join/loose")
     public void enqueueLoose(@RequestBody JoinRequest request) {
         producerService.sendAdvancedJoinRequest(request);
     }
 
-    @GetMapping("/leave")
+    @PostMapping("/leave")
     public void dequeue(@RequestBody JoinRequest request) {
         producerService.sendCancelRequest(request);
     }
