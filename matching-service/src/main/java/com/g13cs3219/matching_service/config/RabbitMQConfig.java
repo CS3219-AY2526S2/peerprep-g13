@@ -35,7 +35,7 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding bing() {
+    public Binding bind() {
         return BindingBuilder
                 .bind(queue())
                 .to(exchange())

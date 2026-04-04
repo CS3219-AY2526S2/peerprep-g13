@@ -21,7 +21,6 @@ public class ProducerService {
     @Value("${rabbitmq.routing.key}")
     private String routingKey;
 
-    private static final Logger log = LoggerFactory.getLogger(ProducerService.class.getName());
     private final RabbitTemplate rabbitTemplate;
     private final MatchingPool matchingPool;
 
@@ -40,7 +39,7 @@ public class ProducerService {
     }
 
     public void sendAdvancedJoinRequest(JoinRequest request) {
-        request.setType("loose_match");
+        request.setType("loose-match");
         rabbitTemplate.convertAndSend(exchangeName, routingKey, request);
     }
 
