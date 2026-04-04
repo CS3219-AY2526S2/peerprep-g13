@@ -24,7 +24,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setHandshakeHandler(userHandshakeHandler)
                 .setAllowedOriginPatterns("*")
                 .withSockJS()
-                .setSessionCookieNeeded(false);  // ← fix cookie_needed
+                .setSessionCookieNeeded(false);
     }
 
     @Override
