@@ -1,5 +1,7 @@
 package com.g13cs3219.matching_service.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
@@ -12,17 +14,21 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ConsumerService {
 
+    private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
     private final MatchingPool matchingPool;
     private final MessageService messageService;
 
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void processRequest(JoinRequest request) {
         if (request.getType().equals("cancel")) {
+            log.info("Received cancel request for user: {}", request.getUserId());
             matchingPool.removeUser(request);
         } else if (request.getType().equals("loose-match")) {
+            log.info("Received loose match request for user: {}", request.getUserId());
             matchingPool.removeUser(request);
             handleJoinRequest(request);
         } else {
+            log.info("Received match request for user: {}", request.getUserId());
             handleJoinRequest(request);
         }
     }
@@ -39,6 +45,7 @@ public class ConsumerService {
                 .ifPresentOrElse(
                         messageService::sendMatchFoundMessage,
                         () -> {
+                            log.info("No match found immediately for user: {}, adding to pool", request.getUserId());
                             matchingPool.addUser(request);
                         });
     }
