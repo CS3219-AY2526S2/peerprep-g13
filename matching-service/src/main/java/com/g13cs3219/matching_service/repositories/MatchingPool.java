@@ -3,7 +3,9 @@ package com.g13cs3219.matching_service.repositories;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Component;
 
@@ -69,14 +71,17 @@ public class MatchingPool {
             return match;
         }
 
+
         // If still no match, try to find a match with the same topic but lower difficulty
-        match = findExactMatch(userId, getLowerDifficulty(difficulty));
+        String lowDiffKey = buildKey(topic, getLowerDifficulty(difficulty));
+        match = findExactMatch(userId, lowDiffKey);
         if (match.isPresent()) {
             return match;
         }
 
         // If still no match, try to find a match with the same topic but higher difficulty
-        match = findExactMatch(userId, getHigherDifficulty(difficulty));
+        String highDiffKey = buildKey(topic, getHigherDifficulty(difficulty));
+        match = findExactMatch(userId, highDiffKey);
         if (match.isPresent()) {
             return match;
         }
@@ -99,12 +104,10 @@ public class MatchingPool {
      *                    matching pool
      */
     public void handleTimeouts(double currentTime) {
-        Set<String> keys = redisTemplate.keys("queue:*");
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-
-        for (String key : keys) {
+        ScanOptions options = ScanOptions.scanOptions().match("queue:*").count(100).build();
+        Cursor<byte[]> cursor = redisTemplate.getConnectionFactory().getConnection().scan(options);
+        while (cursor.hasNext()) {
+            String key = new String(cursor.next());
             Set<ZSetOperations.TypedTuple<String>> timedOutUsers = redisTemplate
                     .opsForZSet()
                     .rangeByScoreWithScores(key, 0, currentTime - 30000);
@@ -118,6 +121,7 @@ public class MatchingPool {
                 }
             }
         }
+        cursor.close();
     }
 
     private Optional<MatchResult> findExactMatch(int userId, String key) {
@@ -143,15 +147,16 @@ public class MatchingPool {
         }
         return Optional.empty();
     }
-
+    
     private Optional<MatchResult> findSameDifficultyMatch(int userId, String difficulty) {
-        Set<String> keys = redisTemplate.keys("*" + difficulty + "*");
-        if (keys == null || keys.isEmpty()) {
-            return Optional.empty();
+        ScanOptions options = ScanOptions.scanOptions().match("*" + difficulty + "*").count(100).build();
+        Cursor<byte[]> cursor = redisTemplate.getConnectionFactory().getConnection().scan(options);
+        while (cursor.hasNext()) {
+            String key = new String(cursor.next());
+            return findExactMatch(userId, key);
         }
-
-        String key = keys.iterator().next();
-        return findExactMatch(userId, key);
+        cursor.close();
+        return Optional.empty();
     }
 
     private String getHigherDifficulty(String difficulty) {
