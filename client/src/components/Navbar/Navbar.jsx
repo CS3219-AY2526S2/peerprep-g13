@@ -34,6 +34,14 @@ export default function Navbar() {
           >
             Questions
           </NavLink>
+          <NavLink
+            to="/matching"
+            className={({ isActive }) =>
+              isActive ? `${styles.link} ${styles.active}` : styles.link
+            }
+          >
+            Match
+          </NavLink>
           {isAdmin && (
             <NavLink
               to="/admin/users"
