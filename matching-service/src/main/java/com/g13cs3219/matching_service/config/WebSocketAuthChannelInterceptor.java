@@ -1,6 +1,7 @@
 package com.g13cs3219.matching_service.config;
 
 import java.security.Principal;
+import java.util.Map;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -17,7 +18,12 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-            String userId = (String) accessor.getSessionAttributes().get("userId");
+            Map<String, Object> sessionAttrs = accessor.getSessionAttributes();
+            String userId = null;
+
+            if (sessionAttrs != null) {
+                userId = (String) sessionAttrs.get("userId");
+            }
 
             if (userId == null) {
                 // fallback from handshake Principal
