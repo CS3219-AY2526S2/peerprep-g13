@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Card, Center, Space, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Card, Center, Select, Space, Stack, Text, TextInput } from '@mantine/core';
 import { matchingApi } from '../../api/matching';
 import { useAuth } from '../../context/ContextProvider';
 import SockJS from 'sockjs-client';
@@ -186,13 +186,17 @@ export default function MatchPage() {
 
                   <Space h="lg" />
 
-                  <TextInput
-                    placeholder="Medium"
+                  <Select
                     label="Difficulty"
-                    size="md"
+                    placeholder="Pick one"
                     value={difficulty}
-                    onChange={(event) => setDifficulty(event.currentTarget.value)}
-                    />
+                    onChange={setDifficulty}
+                    data={[
+                      { value: 'easy', label: 'Easy' },
+                      { value: 'medium', label: 'Medium' },
+                      { value: 'hard', label: 'Hard' },
+                    ]}
+                  />
 
                   {err && (
                     <>
