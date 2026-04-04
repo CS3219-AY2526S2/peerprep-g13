@@ -151,12 +151,17 @@ public class MatchingPool {
     private Optional<MatchResult> findSameDifficultyMatch(int userId, String difficulty) {
         ScanOptions options = ScanOptions.scanOptions().match("*" + difficulty + "*").count(100).build();
         Cursor<byte[]> cursor = redisTemplate.getConnectionFactory().getConnection().scan(options);
-        while (cursor.hasNext()) {
-            String key = new String(cursor.next());
-            return findExactMatch(userId, key);
+        Optional<MatchResult> result = Optional.empty();
+        try {
+            while (cursor.hasNext()) {
+                String key = new String(cursor.next());
+                result = findExactMatch(userId, key);
+                break;
+            }
+        } finally {
+            cursor.close();
         }
-        cursor.close();
-        return Optional.empty();
+        return result;
     }
 
     private String getHigherDifficulty(String difficulty) {
@@ -178,6 +183,11 @@ public class MatchingPool {
     }
 
     private String buildKey(String topic, String difficulty) {
-        return "queue:" + topic + ":" + difficulty;
+        if (topic == null || difficulty == null) {
+            throw new IllegalArgumentException("topic and difficulty cannot be null");
+        }
+        String normalizedTopic = topic.trim().toLowerCase();
+        String normalizedDifficulty = difficulty.trim().toLowerCase();
+        return "queue:" + normalizedTopic + ":" + normalizedDifficulty;
     }
 }
