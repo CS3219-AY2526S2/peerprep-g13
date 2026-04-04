@@ -136,7 +136,8 @@ public class MatchingPool {
             return Optional.of(MatchResult.builder()
                     .userId1(userId)
                     .userId2(Integer.parseInt(match))
-                    .matchInfo(key.split(":")[1] + "-" + key.split(":")[2])
+                    .topic(key.split(":")[1])
+                    .difficulty(key.split(":")[2])
                     .build()
             );
         }

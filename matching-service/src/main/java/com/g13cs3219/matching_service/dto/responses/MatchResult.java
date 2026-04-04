@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class MatchResult {
     private int userId1;
     private int userId2;
-    private String matchInfo;
+    private String topic;
+    private String difficulty;
 }
