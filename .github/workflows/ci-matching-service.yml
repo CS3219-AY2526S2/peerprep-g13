@@ -20,7 +20,6 @@ jobs:
   build-test-push:
     runs-on: ubuntu-latest
 
-    # Spin up Redis và RabbitMQ cho tests
     services:
       redis:
         image: redis:7-alpine
