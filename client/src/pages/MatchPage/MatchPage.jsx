@@ -13,8 +13,8 @@ export default function MatchPage() {
 
   const navigate = useNavigate();
   
-  if (loading) return <div className={styles.loadingState}>Loading dashboard…</div>;
-  if (!user) return <div className={styles.loadingState}>No user data found.</div>;
+  if (loading) return <div>Loading dashboard…</div>;
+  if (!user) return <div>No user data found.</div>;
 
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('');
@@ -55,7 +55,12 @@ export default function MatchPage() {
   };
 
   const connect = () => {
-    const socket = new SockJS(`http://localhost:8082/ws?userId=${user.userId}`);
+    const matchingApiBaseUrl = import.meta.env.VITE_MATCHING_API_BASE_URL || "http://localhost:8082";
+    const wsUrl = new URL(matchingApiBaseUrl);
+    wsUrl.pathname = '/ws';
+    wsUrl.searchParams.set('userId', user.userId);
+
+    const socket = new SockJS(wsUrl.toString());
     const stompClient = new Client({
       webSocketFactory: () => socket,
       debug: (str) => {
