@@ -7,3 +7,4 @@ user-service/target/
 # macOS
 .DS_Store
 client/.env
+/.idea

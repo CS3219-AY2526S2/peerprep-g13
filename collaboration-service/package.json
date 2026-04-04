@@ -10,12 +10,12 @@
     "test": "node --experimental-vm-modules node_modules/.bin/jest"
   },
   "dependencies": {
-    "ws": "^8.18.0",
-    "yjs": "^13.6.20",
-    "y-protocols": "^1.0.6",
-    "lib0": "^0.2.98",
+    "dotenv": "^16.6.1",
     "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.4.7"
+    "lib0": "^0.2.98",
+    "ws": "^8.18.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.20"
   },
   "devDependencies": {
     "jest": "^29.0.0"
