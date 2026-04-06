@@ -23,10 +23,15 @@ export default function CollaborationPage() {
   const [roomFull, setRoomFull] = useState(false);
   const [roomUsers, setRoomUsers] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [partnerEnded, setPartnerEnded] = useState(false);
 
   const editorRef = useRef(null);
   const userRef = useRef(user);
   const copiedTimerRef = useRef(null);
+  const providerRef = useRef(null);
+  const viewRef = useRef(null);
+  const ydocRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => () => clearTimeout(copiedTimerRef.current), []);
 
@@ -59,6 +64,7 @@ export default function CollaborationPage() {
       provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
         params: { token },
       });
+      providerRef.current = provider;
 
       const ytext = ydoc.getText("codemirror");
 
@@ -88,6 +94,23 @@ export default function CollaborationPage() {
         setConnected(false);
       });
 
+      // Listen for MESSAGE_END_SESSION (type byte = 2) from the partner
+      const handleWsMessage = (event) => {
+        try {
+          const buf = event.data instanceof ArrayBuffer
+            ? new Uint8Array(event.data)
+            : new Uint8Array(event.data.buffer ?? event.data);
+          if (buf[0] === 2) setPartnerEnded(true);
+        } catch (_) { /* ignore malformed */ }
+      };
+      provider.ws?.addEventListener("message", handleWsMessage);
+      // Re-attach after reconnects (y-websocket recreates provider.ws on reconnect)
+      provider.on("status", ({ status }) => {
+        if (status === "connected") {
+          provider.ws?.addEventListener("message", handleWsMessage);
+        }
+      });
+
       view = new EditorView({
         state: EditorState.create({
           extensions: [
@@ -111,15 +134,40 @@ export default function CollaborationPage() {
         }),
         parent: editorRef.current,
       });
+      viewRef.current = view;
+      ydocRef.current = ydoc;
     }, 0);
 
     return () => {
       clearTimeout(timer);
+      viewRef.current = null;
+      providerRef.current = null;
+      ydocRef.current = null;
       view?.destroy();
       provider?.destroy();
       ydoc?.destroy();
     };
   }, [roomId]);
+
+  function sendEndSessionMessage() {
+    const ws = providerRef.current?.ws;
+    if (ws?.readyState === WebSocket.OPEN) {
+      // MESSAGE_END_SESSION = 2, encoded as a single varint byte
+      ws.send(new Uint8Array([2]));
+    }
+  }
+
+  function confirmEndSession() {
+    sendEndSessionMessage();
+    setShowEndConfirm(false);
+    // Small delay so the message reaches the partner before we disconnect
+    setTimeout(() => {
+      viewRef.current?.destroy();
+      providerRef.current?.destroy();
+      ydocRef.current?.destroy();
+      navigate("/questions");
+    }, 300);
+  }
 
   function copyRoomLink() {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -149,6 +197,37 @@ export default function CollaborationPage() {
 
   return (
     <div className={styles.page}>
+      {showEndConfirm && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <p className={styles.modalTitle}>End Session?</p>
+            <p className={styles.modalSub}>Your partner will be notified that you have left.</p>
+            <div className={styles.modalActions}>
+              <button className={styles.cancelBtn} onClick={() => setShowEndConfirm(false)}>
+                Cancel
+              </button>
+              <button className={styles.endBtn} onClick={confirmEndSession}>
+                End Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {partnerEnded && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <p className={styles.modalTitle}>Session Ended</p>
+            <p className={styles.modalSub}>Your partner has ended the session.</p>
+            <div className={styles.modalActions}>
+              <button className={styles.endBtn} onClick={() => navigate("/questions")}>
+                Back to Questions
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={() => navigate(-1)}>
           ← Back
@@ -172,6 +251,9 @@ export default function CollaborationPage() {
         <div className={styles.controls}>
           <button className={styles.copyBtn} onClick={copyRoomLink}>
             {copied ? "Copied!" : "Copy Link"}
+          </button>
+          <button className={styles.endSessionBtn} onClick={() => setShowEndConfirm(true)}>
+            End Session
           </button>
         </div>
       </div>
