@@ -10,6 +10,7 @@ on:
     branches: [main, branch-D3]
     paths:
       - "client/**"
+      - "gateway/**"
       - ".github/workflows/ci-client.yml"
 
 jobs:
