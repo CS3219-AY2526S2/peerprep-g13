@@ -5,6 +5,7 @@ on:
     branches: [main, branch-D3]
     paths:
       - "client/**"
+      - "gateway/**"
       - ".github/workflows/ci-client.yml"
   pull_request:
     branches: [main, branch-D3]
@@ -14,7 +15,7 @@ on:
       - ".github/workflows/ci-client.yml"
 
 jobs:
-  build-check:
+  build-test-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,7 +36,7 @@ jobs:
       - name: Build
         working-directory: client
         env:
-          VITE_API_BASE_URL: http://localhost:8080
-          VITE_QUESTION_API_BASE_URL: http://localhost:8081
+          VITE_API_BASE_URL: http://localhost:8090
+          VITE_MATCHING_API_BASE_URL: http://localhost:8090
           VITE_COLLAB_SERVICE_WS_URL: ws://localhost:4000
         run: npm run build
