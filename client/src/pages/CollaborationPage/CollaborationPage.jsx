@@ -25,6 +25,7 @@ export default function CollaborationPage() {
   const [copied, setCopied] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [partnerEnded, setPartnerEnded] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   const editorRef = useRef(null);
   const userRef = useRef(user);
@@ -32,8 +33,17 @@ export default function CollaborationPage() {
   const providerRef = useRef(null);
   const viewRef = useRef(null);
   const ydocRef = useRef(null);
+  const knownUsersRef = useRef(null); // null = not yet initialized
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => () => clearTimeout(copiedTimerRef.current), []);
+
+  function pushNotification(message, type) {
+    const id = Date.now() + Math.random();
+    setNotifications((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 3000);
+  }
 
   useEffect(() => {
     if (!questionId) return;
@@ -78,6 +88,26 @@ export default function CollaborationPage() {
         }
         setRoomUsers([...seen.values()]);
         if (provider.wsconnected) setConnected(true);
+
+        const myId = localStorage.getItem("userId") || "anonymous";
+
+        if (knownUsersRef.current === null) {
+          // First fire — record initial state without showing notifications
+          knownUsersRef.current = new Map(seen);
+        } else {
+          const prev = knownUsersRef.current;
+          for (const [uid, u] of seen) {
+            if (uid !== myId && !prev.has(uid)) {
+              pushNotification(`${u.username} joined`, "join");
+            }
+          }
+          for (const [uid, u] of prev) {
+            if (uid !== myId && !seen.has(uid)) {
+              pushNotification(`${u.username} left`, "leave");
+            }
+          }
+          knownUsersRef.current = new Map(seen);
+        }
       });
 
       const userId = localStorage.getItem("userId") || "anonymous";
@@ -197,6 +227,17 @@ export default function CollaborationPage() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.toastContainer}>
+        {notifications.map((n) => (
+          <div
+            key={n.id}
+            className={`${styles.toast} ${n.type === "join" ? styles.toastJoin : styles.toastLeave}`}
+          >
+            {n.type === "join" ? "●" : "○"} {n.message}
+          </div>
+        ))}
+      </div>
+
       {showEndConfirm && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>

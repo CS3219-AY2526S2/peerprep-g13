@@ -309,6 +309,41 @@
   background: #2a2a2a;
 }
 
+/* ── Toast notifications ── */
+.toastContainer {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 900;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.2s ease;
+}
+
+.toastJoin {
+  background: #16a34a;
+}
+
+.toastLeave {
+  background: #6b7280;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 /* ── End Session button ── */
 .endSessionBtn {
   padding: 6px 14px;
