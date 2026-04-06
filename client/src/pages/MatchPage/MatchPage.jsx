@@ -102,16 +102,6 @@ export default function MatchPage() {
     }
   };
 
-  const fetchQuestion = async (topic, difficulty) => {
-    try {
-      const response = await questionApi.match({ topic, difficulty });
-      return response.data.question;
-    } catch (error) {
-      console.error('Error fetching random question:', error);
-      return null;
-    }
-  };
-
   const startCollaboration = (userId1, userId2, questionId) => {
     const roomId = [userId1, userId2].sort().join('-') + '-' + questionId;
     const url = `/collaborate/${roomId}?questionId=${encodeURIComponent(questionId ?? "")}`;
@@ -140,14 +130,7 @@ export default function MatchPage() {
         const matchInfo = JSON.parse(data);
         console.log('[WS] Match info:', matchInfo);
 
-        const question = await fetchQuestion(matchInfo.topic, matchInfo.difficulty);
-        console.log('[WS] Question fetched:', question);
-
-        if (question) {
-          startCollaboration(matchInfo.userId1, matchInfo.userId2, question.questionId);
-        } else {
-          setErr('Failed to fetch question for the match.');
-        }
+        startCollaboration(matchInfo.userId1, matchInfo.userId2, matchInfo.questionId);
       } catch (e) {
         console.error('[WS] Error processing match:', e);
         setErr('Unexpected error processing match result.');
@@ -172,7 +155,6 @@ export default function MatchPage() {
   const handleLooseMatch = async () => {
     try {
       await matchingApi.loosematch({ userId: user.userId, topic, difficulty });
-      setTimer(15);
     } catch (error) {
       setErr('Failed to switch to loose match.');
     }
@@ -199,9 +181,10 @@ export default function MatchPage() {
                       </Button>
                     </div>
                     <Space h="md" />
+                    {timer <= 15 &&
                     <Button fullWidth variant="subtle" color="gray" size="sm" onClick={handleLooseMatch}>
                       Loose Match
-                    </Button>
+                    </Button>}
                     {err && (<><Space h="sm" /><Text c="red" size="sm">{err}</Text></>)}
                   </div>
                   : <div className="form-container">
