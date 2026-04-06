@@ -28,12 +28,12 @@ class MatchingServiceApplicationTests {
 	void setUp() {
 
 		JoinRequest cleanup1 = new JoinRequest();
-		cleanup1.setUserId(1);
+		cleanup1.setUserId(1L);
 		cleanup1.setTopic("arrays");
 		cleanup1.setDifficulty("easy");
 
 		JoinRequest cleanup2 = new JoinRequest();
-		cleanup2.setUserId(2);
+		cleanup2.setUserId(2L);
 		cleanup2.setTopic("arrays");
 		cleanup2.setDifficulty("easy");
 
@@ -50,13 +50,13 @@ class MatchingServiceApplicationTests {
 	@Test
 	void addUserToPool() {
 		JoinRequest request = new JoinRequest();
-		request.setUserId(1);
+		request.setUserId(1L);
 		request.setTopic("arrays");
 		request.setDifficulty("easy");
 
 		matchingPool.addUser(request);
 
-		Optional<MatchResult> result = matchingPool.findMatch(2, "arrays", "easy", "match");
+		Optional<MatchResult> result = matchingPool.findMatch(2L, "arrays", "easy", "match");
 		assertThat(result).isPresent();
 		assertThat(result.get().getUserId1()).isEqualTo(2);
 		assertThat(result.get().getUserId2()).isEqualTo(1);
@@ -64,20 +64,20 @@ class MatchingServiceApplicationTests {
 
 	@Test
 	void noMatchWhenPoolEmpty() {
-		Optional<MatchResult> result = matchingPool.findMatch(99, "graphs", "hard", "match");
+		Optional<MatchResult> result = matchingPool.findMatch(Long.valueOf(99), "graphs", "hard", "match");
 		assertThat(result).isEmpty();
 	}
 
 	@Test
 	void sameUserNotMatchedWithSelf() {
 		JoinRequest request = new JoinRequest();
-		request.setUserId(5);
+		request.setUserId(5L);
 		request.setTopic("sorting");
 		request.setDifficulty("medium");
 
 		matchingPool.addUser(request);
 
-		Optional<MatchResult> result = matchingPool.findMatch(5, "sorting", "medium", "match");
+		Optional<MatchResult> result = matchingPool.findMatch(5L, "sorting", "medium", "match");
 
 		if (result.isPresent()) {
 			assertThat(result.get().getUserId2()).isEqualTo(5);
@@ -87,7 +87,7 @@ class MatchingServiceApplicationTests {
 	@Test
 	void buildKeyThrowsOnNullTopic() {
 		JoinRequest request = new JoinRequest();
-		request.setUserId(1);
+		request.setUserId(1L);
 		request.setTopic(null);
 		request.setDifficulty("easy");
 
@@ -100,7 +100,7 @@ class MatchingServiceApplicationTests {
 	@Test
 	void buildKeyThrowsOnNullDifficulty() {
 		JoinRequest request = new JoinRequest();
-		request.setUserId(1);
+		request.setUserId(1L);
 		request.setTopic("arrays");
 		request.setDifficulty(null);
 

@@ -10,8 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class MatchResult {
-    private int userId1;
-    private int userId2;
+    private Long userId1;
+    private Long userId2;
     private String topic;
     private String difficulty;
+    private Long questionId;
 }
