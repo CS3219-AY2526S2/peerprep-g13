@@ -8,3 +8,4 @@ user-service/target/
 .DS_Store
 client/.env
 /.idea
+gateway/smoke-test.sh
