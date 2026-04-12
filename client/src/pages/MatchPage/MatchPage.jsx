@@ -3,7 +3,6 @@ import { Button, Card, Center, Select, Space, Stack, Text, TextInput } from '@ma
 import { matchingApi } from '../../api/matching';
 import { useAuth } from '../../context/ContextProvider';
 import { Client } from '@stomp/stompjs';
-import { questionApi } from '../../api/question';
 import { useNavigate } from 'react-router-dom';
 
 export default function MatchPage() {
@@ -103,6 +102,12 @@ export default function MatchPage() {
   };
 
   const startCollaboration = (userId1, userId2, question) => {
+    if (!question) {
+      console.error('[WS] Invalid match payload: missing question or questionId.', { userId1, userId2, question });
+      setErr('Matched session is missing question data. Please try again.');
+      return;
+    }
+
     const roomId = [userId1, userId2].sort().join('-') + '-' + question.questionId;
     const url = `/collaborate/${roomId}`;
     console.log('[WS] Navigating to:', url);

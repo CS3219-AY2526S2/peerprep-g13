@@ -1,19 +1,23 @@
 package com.g13cs3219.matching_service.services;
 
+import java.time.Duration;
+import java.util.concurrent.TimeoutException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.g13cs3219.matching_service.dto.requests.QuestionRequest;
 import com.g13cs3219.matching_service.dto.responses.MatchResult;
 import com.g13cs3219.matching_service.dto.responses.QuestionResponse;
 import com.g13cs3219.matching_service.dto.responses.QuestionResponseWrapper;
-
-import lombok.AllArgsConstructor;
 
 @Service
 public class MessageService {
@@ -86,14 +90,24 @@ public class MessageService {
     }
 
     private QuestionResponseWrapper getRandomQuestion(QuestionRequest request) {
-        return webClientBuilder
+        QuestionResponseWrapper response = webClientBuilder
                 .build()
                 .post()
                 .uri(questionServiceURL + "/questions/match")
                 .header("X-Internal-Request", "true")
                 .bodyValue(request)
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, res ->
+                        res.bodyToMono(String.class)
+                                .map(body -> new RuntimeException("Error: " + body))
+                )
                 .bodyToMono(QuestionResponseWrapper.class)
+                .timeout(Duration.ofSeconds(3)) // ✅ prevent hanging
                 .block();
+
+        if (response == null) {
+            throw new RuntimeException("Empty response from question service");
+        }
+        return response;
     }
 }
