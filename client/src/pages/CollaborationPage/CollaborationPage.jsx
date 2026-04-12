@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { yCollab } from "y-codemirror.next";
@@ -15,10 +15,10 @@ export default function CollaborationPage() {
   const { roomId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const questionId = searchParams.get("questionId");
+  const location = useLocation();
+  const question = location.state?.question;
   const { user } = useAuth(); // kept in state so userRef stays current
-
-  const [question, setQuestion] = useState(null);
+  
   const [connected, setConnected] = useState(false);
   const [roomFull, setRoomFull] = useState(false);
   const [roomUsers, setRoomUsers] = useState([]);
@@ -29,14 +29,6 @@ export default function CollaborationPage() {
   const copiedTimerRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => () => clearTimeout(copiedTimerRef.current), []);
-
-  useEffect(() => {
-    if (!questionId) return;
-    questionApi
-      .getById(questionId)
-      .then((res) => setQuestion(res.data.question))
-      .catch((err) => console.error("Failed to load question", questionId, err));
-  }, [questionId]);
 
   useEffect(() => {
     if (!editorRef.current || !roomId) return;

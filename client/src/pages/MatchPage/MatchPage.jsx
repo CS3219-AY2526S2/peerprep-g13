@@ -102,11 +102,13 @@ export default function MatchPage() {
     }
   };
 
-  const startCollaboration = (userId1, userId2, questionId) => {
-    const roomId = [userId1, userId2].sort().join('-') + '-' + questionId;
-    const url = `/collaborate/${roomId}?questionId=${encodeURIComponent(questionId ?? "")}`;
+  const startCollaboration = (userId1, userId2, question) => {
+    const roomId = [userId1, userId2].sort().join('-') + '-' + question.questionId;
+    const url = `/collaborate/${roomId}`;
     console.log('[WS] Navigating to:', url);
-    navigateRef.current(url);
+    navigateRef.current(url, {
+      state: { question }
+    });
   };
 
   const handleMatchMessage = async (data) => {
@@ -130,7 +132,7 @@ export default function MatchPage() {
         const matchInfo = JSON.parse(data);
         console.log('[WS] Match info:', matchInfo);
 
-        startCollaboration(matchInfo.userId1, matchInfo.userId2, matchInfo.questionId);
+        startCollaboration(matchInfo.userId1, matchInfo.userId2, matchInfo.question);
       } catch (e) {
         console.error('[WS] Error processing match:', e);
         setErr('Unexpected error processing match result.');
