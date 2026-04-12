@@ -9,3 +9,4 @@ user-service/target/
 client/.env
 /.idea
 gateway/smoke-test.sh
+.properties
