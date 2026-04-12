@@ -36,7 +36,7 @@ export default function MatchPage() {
 
   const connectAndWait = () => {
     return new Promise((resolve, reject) => {
-      const matchingApiBaseUrl = import.meta.env.VITE_MATCHING_API_BASE_URL || "http://localhost:8082";
+      const matchingApiBaseUrl = import.meta.env.VITE_MATCHING_API_BASE_URL || "http://localhost:8090";
 
       const wsUrl = matchingApiBaseUrl
           .replace(/^http:\/\//, 'ws://')
