@@ -54,10 +54,10 @@ public class MessageService {
         log.info("Sending match found message to users: {} and {}", match.getUserId1(), match.getUserId2());
 
         QuestionRequest request = QuestionRequest.buildQuestionRequest(match.getTopic(), match.getDifficulty());
-        Long randomQuestionId = getRandomQuestion(request).getQuestion().getQuestionId();
+        QuestionResponse randomQuestion = getRandomQuestion(request).getQuestion();
 
-        match.setQuestionId(randomQuestionId);
-        log.info("Random question found: {}", randomQuestionId);
+        match.setQuestion(randomQuestion);
+        log.info("Random question found: {}", randomQuestion);
 
         messagingTemplate.convertAndSendToUser(
             match.getUserId1() + "",

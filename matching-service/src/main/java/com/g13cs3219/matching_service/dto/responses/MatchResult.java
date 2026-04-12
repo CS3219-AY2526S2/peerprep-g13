@@ -14,5 +14,5 @@ public class MatchResult {
     private Long userId2;
     private String topic;
     private String difficulty;
-    private Long questionId;
+    private QuestionResponse question;
 }
