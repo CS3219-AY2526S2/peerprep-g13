@@ -30,11 +30,6 @@ export default function CollaborationPage() {
   useEffect(() => () => clearTimeout(copiedTimerRef.current), []);
 
   useEffect(() => {
-    const question = location.state?.question;
-    setQuestion(question);
-  }, [setQuestion, location]);
-
-  useEffect(() => {
     if (!editorRef.current || !roomId) return;
 
     let view = null;
@@ -44,6 +39,20 @@ export default function CollaborationPage() {
     // Defer setup so React StrictMode's double-invoke cleanup cancels before anything is created
     const timer = setTimeout(() => {
       ydoc = new Y.Doc();
+
+      const ymeta = ydoc.getMap("meta");
+      if (!ymeta.has("question") && location.state?.question) {
+        ymeta.set("question", location.state.question);
+      }
+
+      const updateQuestion = () => {
+        const question = ymeta.get("question");
+        if (question) setQuestion(question);
+      };
+
+      updateQuestion();
+      ymeta.observe(updateQuestion);
+
       let wsUrl =
         import.meta.env.VITE_COLLAB_SERVICE_WS_URL || "ws://localhost:4000";
       // Enforce encrypted WebSocket in non-local environments
