@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Card, Center, Select, Space, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Card, Center, Select, Space, Stack, Text } from '@mantine/core';
 import { matchingApi } from '../../api/matching';
 import { useAuth } from '../../context/ContextProvider';
 import { Client } from '@stomp/stompjs';
@@ -44,7 +44,7 @@ export default function MatchPage() {
     };
     
     fetchTopicList();
-  }, [setTopicList]);
+  }, [setTopicList, setErr, questionApi, capitalizeWords]);
 
   useEffect(() => {
     if (!isMatching) return;
