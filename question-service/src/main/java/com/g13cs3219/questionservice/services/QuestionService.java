@@ -2,6 +2,7 @@ package com.g13cs3219.questionservice.services;
 
 import com.g13cs3219.questionservice.dto.requests.QuestionRequest;
 import com.g13cs3219.questionservice.dto.responses.QuestionResponse;
+import com.g13cs3219.questionservice.dto.responses.TopicResponse;
 import com.g13cs3219.questionservice.model.Question;
 import com.g13cs3219.questionservice.repositories.QuestionRepository;
 import lombok.RequiredArgsConstructor;
@@ -168,6 +169,18 @@ public class QuestionService {
                 .map(QuestionResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No question found for topic='" + normalizedTopic + "' difficulty='" + difficulty + "'"));
+    }
+
+    /**
+     * returns a list of distinct topics
+     */
+    public TopicResponse getTopics() {
+        List<String> topics = questionRepository.findAllDistinctTopics();
+        if (topics.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No topics found.");
+        }
+
+        return TopicResponse.from(topics);
     }
 
     /**

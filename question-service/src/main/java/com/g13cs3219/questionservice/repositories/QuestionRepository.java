@@ -25,4 +25,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             nativeQuery = true)
     Optional<Question> findRandomByTopicAndDifficulty(@Param("topic") String topic,
                                                       @Param("difficulty") String difficulty);
+
+    @Query("SELECT DISTINCT q.topic FROM Question q")
+    List<String> findAllDistinctTopics();
 }
