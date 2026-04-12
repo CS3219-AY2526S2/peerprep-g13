@@ -10,6 +10,7 @@ export default function MatchPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
+  const [topicList, setTopicList] = useState([]);
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [isMatching, setIsMatching] = useState(false);
@@ -18,7 +19,32 @@ export default function MatchPage() {
   const clientRef = useRef(null);
   const navigateRef = useRef(navigate);
 
+  function capitalizeWords(str) {
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
   useEffect(() => { navigateRef.current = navigate; }, [navigate]);
+
+  useEffect(() => {
+    async function fetchTopicList() {
+      try {
+        const topics = await questionApi.topics();
+        const formatted = topics.data.data.topics.map(topic => {
+          return { value: topic, label: capitalizeWords(topic) };
+        });
+
+        setTopicList(formatted);
+      } catch (err) {
+        setErr(err?.response?.data?.message || "Failed to load topics.");
+      }
+    };
+    
+    fetchTopicList();
+  }, [setTopicList]);
 
   useEffect(() => {
     if (!isMatching) return;
@@ -206,12 +232,12 @@ export default function MatchPage() {
                   </div>
                   : <div className="form-container">
                     <form onSubmit={handleMatch}>
-                      <TextInput
-                          placeholder="Arrays"
-                          label="Topic"
-                          size="md"
-                          value={topic}
-                          onChange={(event) => setTopic(event.currentTarget.value)}
+                      <Select
+                        label="Topic"
+                        placeholder="Pick one"
+                        value={topic}
+                        onChange={setTopic}
+                        data={topicList}
                       />
                       <Space h="lg" />
                       <Select
