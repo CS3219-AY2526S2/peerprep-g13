@@ -1,24 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { yCollab } from "y-codemirror.next";
 import { EditorView, lineNumbers, highlightActiveLine, keymap } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { defaultKeymap, historyKeymap, history, indentWithTab } from "@codemirror/commands";
-import { questionApi } from "../../api/question";
 import { useAuth } from "../../context/ContextProvider";
 import DifficultyBadge from "../../components/questions/DifficultyBadge";
 import styles from "./CollaborationPage.module.css";
 
 export default function CollaborationPage() {
   const { roomId } = useParams();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const question = location.state?.question;
   const { user } = useAuth(); // kept in state so userRef stays current
   
+  const [question, setQuestion] = useState(null);
   const [connected, setConnected] = useState(false);
   const [roomFull, setRoomFull] = useState(false);
   const [roomUsers, setRoomUsers] = useState([]);
@@ -27,8 +25,14 @@ export default function CollaborationPage() {
   const editorRef = useRef(null);
   const userRef = useRef(user);
   const copiedTimerRef = useRef(null);
+
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => () => clearTimeout(copiedTimerRef.current), []);
+
+  useEffect(() => {
+    const question = location.state?.question;
+    setQuestion(question);
+  }, [setQuestion, location]);
 
   useEffect(() => {
     if (!editorRef.current || !roomId) return;
