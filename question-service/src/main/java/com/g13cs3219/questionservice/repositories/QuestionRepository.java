@@ -26,6 +26,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     Optional<Question> findRandomByTopicAndDifficulty(@Param("topic") String topic,
                                                       @Param("difficulty") String difficulty);
 
-    @Query("SELECT DISTINCT q.topic FROM Question q")
+    @Query("SELECT DISTINCT q.topic FROM Question q WHERE q.isActive = true ORDER BY q.topic")
     List<String> findAllDistinctTopics();
 }
