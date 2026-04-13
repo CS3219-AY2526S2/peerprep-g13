@@ -123,7 +123,6 @@ services:
       SPRING_FLYWAY_ENABLED:             true
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
       SPRING_FLYWAY_BASELINE_VERSION:    "0"
-      USER_SERVICE_URL:                  http://user-service:8080
       CORS_ALLOWED_ORIGINS:              ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
     depends_on:
       question-db:
@@ -147,7 +146,6 @@ services:
       SPRING_RABBITMQ_PASSWORD:  ${RABBITMQ_PASS:-guest}
       SPRING_DATA_REDIS_HOST:    redis
       SPRING_DATA_REDIS_PORT:    6379
-      USER_SERVICE_URL:          http://user-service:8080
       CORS_ALLOWED_ORIGINS:      ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
       RABBITMQ_QUEUE_NAME:       ${RABBITMQ_QUEUE_NAME:-matching-queue}
       RABBITMQ_EXCHANGE_NAME:    ${RABBITMQ_EXCHANGE_NAME:-matching-exchange}
@@ -188,6 +186,7 @@ services:
       - user-service
       - question-service
       - matching-service
+      - collaboration-service
     networks:
       - peerprep-net
     restart: unless-stopped
@@ -199,13 +198,12 @@ services:
       args:
         VITE_API_BASE_URL: http://localhost:8090
         VITE_MATCHING_API_BASE_URL: http://localhost:8090
-        VITE_COLLAB_SERVICE_WS_URL: ws://localhost:4000
+        VITE_COLLAB_SERVICE_WS_URL: ws://localhost:8090/collab
     container_name: peerprep-client
     ports:
       - "5173:80"
     depends_on:
       - gateway
-      - collaboration-service
     networks:
       - peerprep-net
     restart: unless-stopped
