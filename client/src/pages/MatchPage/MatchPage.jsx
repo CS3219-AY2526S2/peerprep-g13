@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Card, Center, Select, Space, Stack, Text } from '@mantine/core';
 import { matchingApi } from '../../api/matching';
 import { useAuth } from '../../context/ContextProvider';
 import { Client } from '@stomp/stompjs';
 import { useNavigate } from 'react-router-dom';
+import { questionApi } from '../../api/question';
 
 export default function MatchPage() {
   const { user, loading } = useAuth();
@@ -18,13 +19,13 @@ export default function MatchPage() {
   const clientRef = useRef(null);
   const navigateRef = useRef(navigate);
 
-  function capitalizeWords(str) {
+  const capitalizeWords = useCallback((str) => {
     return str
       .toLowerCase()
       .split(" ")
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
-  }
+  }, []);
 
   useEffect(() => { navigateRef.current = navigate; }, [navigate]);
 
