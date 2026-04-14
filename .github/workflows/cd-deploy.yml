@@ -2,7 +2,7 @@ name: CD — Deploy to AWS EC2
 
 on:
   push:
-    branches: [branch-D4]
+    branches: [main, branch-D4]
 
 jobs:
   deploy:
