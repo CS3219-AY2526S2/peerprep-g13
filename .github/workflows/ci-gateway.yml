@@ -1,22 +1,20 @@
-name: CI — client
+name: CI — gateway
 
 on:
   push:
     branches: [main, branch-D3, branch-D4]
     paths:
-      - "client/**"
       - "gateway/**"
-      - ".github/workflows/ci-client.yml"
+      - ".github/workflows/ci-gateway.yml"
   pull_request:
     branches: [main, branch-D3, branch-D4]
     paths:
-      - "client/**"
       - "gateway/**"
-      - ".github/workflows/ci-client.yml"
+      - ".github/workflows/ci-gateway.yml"
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/peerprep-client
+  IMAGE_NAME: ${{ github.repository_owner }}/peerprep-gateway
 
 jobs:
   build-test-push:
@@ -25,25 +23,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: client/package-lock.json
-
-      - name: Install dependencies
-        working-directory: client
-        run: npm ci
-
-      - name: Build
-        working-directory: client
-        env:
-          VITE_API_BASE_URL: http://localhost:8090
-          VITE_MATCHING_API_BASE_URL: http://localhost:8090
-          VITE_COLLAB_SERVICE_WS_URL: ws://localhost:4000
-        run: npm run build
 
       - name: Log in to GHCR
         if: github.event_name == 'push'
@@ -66,11 +45,7 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
-          context: ./client
+          context: ./gateway
           push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VITE_API_BASE_URL=http://47.129.119.71:8090
-            VITE_MATCHING_API_BASE_URL=http://47.129.119.71:8090
-            VITE_COLLAB_SERVICE_WS_URL=ws://47.129.119.71:8090/collab

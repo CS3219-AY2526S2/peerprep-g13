@@ -2,12 +2,12 @@ name: CI — collaboration-service
 
 on:
   push:
-    branches: [main, branch-D3]
+    branches: [main, branch-D3, branch-D4]
     paths:
       - "collaboration-service/**"
       - ".github/workflows/ci-collaboration-service.yml"
   pull_request:
-    branches: [main, branch-D3]
+    branches: [main, branch-D3, branch-D4]
     paths:
       - "collaboration-service/**"
       - ".github/workflows/ci-collaboration-service.yml"
@@ -55,7 +55,7 @@ jobs:
           tags: |
             type=sha,prefix=
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=staging,enable=${{ github.ref == 'refs/heads/branch-D3' }}
+            type=raw,value=staging,enable=${{ github.ref == 'refs/heads/branch-D3' || github.ref == 'refs/heads/branch-D4' }}
 
       - name: Build and push image
         uses: docker/build-push-action@v5

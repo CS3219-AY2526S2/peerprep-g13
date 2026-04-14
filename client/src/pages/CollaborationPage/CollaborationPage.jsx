@@ -69,10 +69,10 @@ export default function CollaborationPage() {
 
       let wsUrl =
         import.meta.env.VITE_COLLAB_SERVICE_WS_URL || "ws://localhost:4000";
-      // Enforce encrypted WebSocket in non-local environments
-      if (!wsUrl.startsWith("wss://") && !wsUrl.includes("localhost") && !wsUrl.includes("127.0.0.1")) {
-        wsUrl = wsUrl.replace(/^ws:\/\//, "wss://");
-      }
+      //  Enforce encrypted WebSocket in non-local environments
+      // if (!wsUrl.startsWith("wss://") && !wsUrl.includes("localhost") && !wsUrl.includes("127.0.0.1")) {
+      //   wsUrl = wsUrl.replace(/^ws:\/\//, "wss://");
+      // }
       const token = localStorage.getItem("accessToken");
 
       provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
