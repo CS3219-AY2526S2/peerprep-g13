@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import * as Y from "yjs";
+import { questionApi } from "../../api/question";
 import { WebsocketProvider } from "y-websocket";
 import { yCollab } from "y-codemirror.next";
 import { EditorView, lineNumbers, highlightActiveLine, keymap } from "@codemirror/view";
@@ -13,12 +14,10 @@ import styles from "./CollaborationPage.module.css";
 export default function CollaborationPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { user } = useAuth(); // kept in state so userRef stays current
   
   const [question, setQuestion] = useState(null);
   const [connected, setConnected] = useState(false);
-  const [roomFull, setRoomFull] = useState(false);
   const [roomUsers, setRoomUsers] = useState([]);
   const [copied, setCopied] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
@@ -54,18 +53,21 @@ export default function CollaborationPage() {
     const timer = setTimeout(() => {
       ydoc = new Y.Doc();
 
-      const ymeta = ydoc.getMap("meta");
-      if (!ymeta.has("question") && location.state?.question) {
-        ymeta.set("question", location.state.question);
-      }
-
-      const updateQuestion = () => {
-        const question = ymeta.get("question");
-        if (question) setQuestion(question);
+      // Load question from server-authoritative Yjs map "room-state".
+      // The collaboration-service writes questionId into this map on connection
+      // from the Redis room entry — do not rely on URL params or navigation state.
+      const roomState = ydoc.getMap("room-state");
+      const loadQuestion = async () => {
+        const questionId = roomState.get("questionId");
+        if (questionId == null) return;
+        try {
+          const res = await questionApi.getById(questionId);
+          setQuestion(res.data.question);
+        } catch (err) {
+          console.error("[Collab] Failed to load question:", err);
+        }
       };
-
-      updateQuestion();
-      ymeta.observe(updateQuestion);
+      roomState.observe(loadQuestion);
 
       let wsUrl =
         import.meta.env.VITE_COLLAB_SERVICE_WS_URL || "ws://localhost:4000";
@@ -124,7 +126,16 @@ export default function CollaborationPage() {
       });
 
       provider.on("connection-close", (event) => {
-        if (event?.code === 4003) setRoomFull(true);
+        if (event?.code === 4004) {
+          provider.shouldConnect = false;
+          navigate("/match", { state: { error: "Room not found. Please start a new match." } });
+          return;
+        }
+        if (event?.code === 4003) {
+          provider.shouldConnect = false;
+          navigate("/match", { state: { error: "You are not a participant of this room." } });
+          return;
+        }
         setConnected(false);
       });
 
@@ -212,22 +223,6 @@ export default function CollaborationPage() {
   }
 
   const topics = question?.topics ?? (question?.topic ? [question.topic] : []);
-
-  if (roomFull) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.fullScreen}>
-          <p className={styles.roomFullTitle}>Room is full</p>
-          <p className={styles.roomFullSub}>
-            This room already has 2 participants. Ask your partner to share a new room link.
-          </p>
-          <button className={styles.copyBtn} onClick={() => navigate("/questions")}>
-            Back to Questions
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.page}>

@@ -1,27 +1,30 @@
 import { WebSocketServer } from "ws";
 import { verifyToken } from "./auth.js";
 import { YjsRoom } from "./room.js";
+import redis from "./redis.js";
 
 /** @type {Map<string, YjsRoom>} */
 const rooms = new Map();
 
-function getOrCreateRoom(roomId) {
+function getRoom(roomId) {
   if (!rooms.has(roomId)) {
     rooms.set(roomId, new YjsRoom(roomId));
   }
   return rooms.get(roomId);
 }
 
-function deleteRoomIfEmpty(roomId) {
+async function deleteRoomIfEmpty(roomId) {
   const room = rooms.get(roomId);
   if (room && room.clients.size === 0) {
     // Grace period: keep room alive for 30s so a page reload doesn't lose content
-    setTimeout(() => {
+    setTimeout(async () => {
       const r = rooms.get(roomId);
       if (r && r.clients.size === 0) {
         r.destroy();
         rooms.delete(roomId);
-        console.log(`[Room ${roomId}] Destroyed after grace period.`);
+        // Permanently close the room in Redis so reconnects are rejected (Issue 3)
+        await redis.del(`room:${roomId}`);
+        console.log(`[Room ${roomId}] Destroyed after grace period and removed from Redis.`);
       }
     }, 30_000);
   }
@@ -30,7 +33,7 @@ function deleteRoomIfEmpty(roomId) {
 export function setupWebSocketServer(httpServer) {
   const wss = new WebSocketServer({ server: httpServer });
 
-  wss.on("connection", (ws, req) => {
+  wss.on("connection", async (ws, req) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const token = url.searchParams.get("token");
     // y-websocket puts the room name in the path: ws://host/<roomId>?token=...
@@ -49,28 +52,50 @@ export function setupWebSocketServer(httpServer) {
     const payload = verifyToken(token);
     if (!payload) {
       ws.close(4001, "Invalid or expired token");
-      console.log(`[WS] Rejected: JWT verification failed (check JWT_SECRET matches user-service)`);
+      console.log(`[WS] Rejected: JWT verification failed`);
       return;
     }
 
-    const userId = payload.sub; // Spring Boot sets sub = email
-    console.log(`[WS] ✓ User "${userId}" authenticated, joining room "${roomId}"`);
+    const userEmail = payload.sub; // Spring Boot sets sub = email
 
-    const room = getOrCreateRoom(roomId);
-
-    // Count unique userIds already in the room (same userId = same person, allow reconnects)
-    const uniqueUsers = new Set([...room.clients.values()].map((m) => m.userId));
-    console.log(`[WS] Room "${roomId}" current unique users: [${[...uniqueUsers].join(", ")}]`);
-
-    if (!uniqueUsers.has(userId) && uniqueUsers.size >= 2) {
-      ws.close(4003, "Room is full (max 2 users)");
-      console.log(`[WS] Room "${roomId}" is full. Rejected user "${userId}"`);
+    // Validate room exists in Redis (Issue 1 & 3)
+    let roomData;
+    try {
+      const raw = await redis.get(`room:${roomId}`);
+      if (!raw) {
+        ws.close(4004, "Room not found. All rooms must be created through matching.");
+        console.log(`[WS] Rejected: room "${roomId}" not found in Redis`);
+        return;
+      }
+      roomData = JSON.parse(raw);
+    } catch (err) {
+      console.error(`[WS] Redis error for room "${roomId}":`, err.message);
+      ws.close(4004, "Room not found. All rooms must be created through matching.");
       return;
     }
 
-    room.addClient(ws, userId);
-    const newUniqueUsers = new Set([...room.clients.values()].map((m) => m.userId));
-    console.log(`[WS] Room "${roomId}" users after join: [${[...newUniqueUsers].join(", ")}] (${newUniqueUsers.size} unique)`);
+    // Validate participant (Issue 1)
+    const isParticipant =
+      userEmail === roomData.email1 || userEmail === roomData.email2;
+    if (!isParticipant) {
+      ws.close(4003, "Unauthorized: you are not a participant of this room");
+      console.log(`[WS] Rejected: user "${userEmail}" is not a participant of room "${roomId}"`);
+      return;
+    }
+
+    console.log(`[WS] ✓ User "${userEmail}" authorized for room "${roomId}"`);
+
+    const room = getRoom(roomId);
+
+    // Write questionId into Yjs shared map "room-state" so all clients receive it
+    // on initial sync (Issue 1). Set only once — idempotent on reconnect.
+    if (roomData.questionId != null && !room.doc.getMap("room-state").has("questionId")) {
+      room.doc.getMap("room-state").set("questionId", Number(roomData.questionId));
+    }
+
+    room.addClient(ws, userEmail);
+    const allUsers = [...room.clients.values()].map((m) => m.userId);
+    console.log(`[WS] Room "${roomId}" users after join: [${allUsers.join(", ")}]`);
 
     ws.on("message", (message) => {
       try {
@@ -86,7 +111,7 @@ export function setupWebSocketServer(httpServer) {
     });
 
     ws.on("error", (err) => {
-      console.error(`[WS] Socket error for user ${userId}:`, err);
+      console.error(`[WS] Socket error for user ${userEmail}:`, err);
       room.removeClient(ws);
       deleteRoomIfEmpty(roomId);
     });

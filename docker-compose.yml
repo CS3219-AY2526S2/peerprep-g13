@@ -144,12 +144,15 @@ services:
       RABBITMQ_QUEUE_NAME:       ${RABBITMQ_QUEUE_NAME:-matching-queue}
       RABBITMQ_EXCHANGE_NAME:    ${RABBITMQ_EXCHANGE_NAME:-matching-exchange}
       RABBITMQ_ROUTING_KEY:      ${RABBITMQ_ROUTING_KEY:-matching-key}
+      QUESTION_SERVICE_URL:      http://peerprep-question-service:8081
     depends_on:
       rabbitmq:
         condition: service_healthy
       redis:
         condition: service_healthy
       user-service:
+        condition: service_started
+      question-service:
         condition: service_started
     networks:
       - peerprep-net
@@ -163,6 +166,11 @@ services:
     environment:
       PORT:       4000
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - peerprep-net
     restart: unless-stopped

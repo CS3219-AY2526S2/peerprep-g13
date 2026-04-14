@@ -6,6 +6,7 @@ import lombok.Data;
 public class JoinRequest {
     private String type = "match"; // "match" or "loose-match" or "cancel"
     private Long userId;
+    private String email;
     private String topic;
     private String difficulty;
 }
