@@ -60,6 +60,6 @@ All API calls go through `src/api/`:
 
 - `axios.js` — Axios instance with base URL and Bearer token interceptor
 - `question.js` — Question CRUD + match endpoint
-- `user.js` — Auth (register, login, logout) and dashboard
+- `user.js` — Auth (register, login, logout) and dashboard.
 
 > `userApi.dashboard()` is currently mocked. Wire it to the real user service when available.
