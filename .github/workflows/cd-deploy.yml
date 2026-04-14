@@ -1,12 +1,22 @@
 name: CD — Deploy to AWS EC2
 
 on:
-  push:
-    branches: [main, branch-D4]
+  workflow_run:
+    workflows:
+      - "CI — client"
+      - "CI — user-service"
+      - "CI — question-service"
+      - "CI — matching-service"
+      - "CI — collaboration-service"
+      - "CI — gateway"
+    branches: [branch-D4, main]
+    types: [completed]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout
@@ -24,7 +34,7 @@ jobs:
             cd /home/ubuntu/peerprep
 
             echo "${{ secrets.PAT_TOKEN }}" | \
-              docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+              docker login ghcr.io -u "cs3219-ay2526s2" --password-stdin
 
             export GITHUB_REPO_OWNER=cs3219-ay2526s2
 
