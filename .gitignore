@@ -9,3 +9,7 @@ user-service/target/
 client/.env
 /.idea
 gateway/smoke-test.sh
+# Graphify knowledge graph outputs
+graphify-out/
+# Claude Code local config
+.claude/
