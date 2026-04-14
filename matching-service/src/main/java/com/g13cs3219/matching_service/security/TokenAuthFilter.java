@@ -1,23 +1,14 @@
 package com.g13cs3219.matching_service.security;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g13cs3219.matching_service.model.Role;
 
 import jakarta.servlet.FilterChain;
@@ -25,62 +16,36 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Reads the X-User-Id, X-User-Role, X-User-Email headers injected by the
+ * API gateway after it has already validated the JWT via auth_request.
+ * No outbound call to user-service is made here.
+ */
 @Component
 public class TokenAuthFilter extends OncePerRequestFilter {
-
-    @Value("${user-service.url}")
-    private String userServiceUrl;
-
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        String userId  = request.getHeader("X-User-Id");
+        String roleStr = request.getHeader("X-User-Role");
+        String email   = request.getHeader("X-User-Email");
 
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", authHeader);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<Map> verifyResponse = restTemplate.exchange(
-                    userServiceUrl + "/user/auth",
-                    HttpMethod.GET,
-                    entity,
-                    Map.class
-            );
-
-            Map<String, Object> data = (Map<String, Object>) verifyResponse.getBody().get("data");
-            String email = (String) data.get("email");
-            String roleStr = data.get("role").toString();
-            Long userId = (data.get("userId") instanceof Number num) ? num.longValue() : null;
-            Role role = Role.valueOf(roleStr.toUpperCase());
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            email,
-                            null,
-                            Set.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
-                    );
-            authentication.setDetails(userId);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        } catch (HttpClientErrorException e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write(objectMapper.writeValueAsString(Map.of("error", "Invalid or expired token")));
-            return;
-        } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-            response.setContentType("application/json");
-            response.getWriter().write(objectMapper.writeValueAsString(Map.of("error", "Auth service unavailable")));
-            return;
+        if (userId != null && roleStr != null && email != null) {
+            try {
+                Role role = Role.valueOf(roleStr.toUpperCase());
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                email,
+                                null,
+                                Set.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
+                        );
+                authentication.setDetails(Long.parseLong(userId));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception ignored) {
+                // malformed header — leave security context unauthenticated
+            }
         }
 
         filterChain.doFilter(request, response);

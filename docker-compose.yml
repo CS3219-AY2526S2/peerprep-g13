@@ -89,8 +89,6 @@ services:
       context: ./user-service
       dockerfile: Dockerfile
     container_name: peerprep-user-service
-    ports:
-      - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL:             jdbc:postgresql://user-db:5432/${USER_DB_NAME:-user_db}
       DB_USERNAME:                       ${DB_USERNAME:-postgres}
@@ -113,8 +111,6 @@ services:
       context: ./question-service
       dockerfile: Dockerfile
     container_name: peerprep-question-service
-    ports:
-      - "8081:8081"
     environment:
       SPRING_DATASOURCE_URL:             jdbc:postgresql://question-db:5432/${QUESTION_DB_NAME:-question_db}
       DB_USERNAME:                       ${DB_USERNAME:-postgres}
@@ -123,7 +119,6 @@ services:
       SPRING_FLYWAY_ENABLED:             true
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
       SPRING_FLYWAY_BASELINE_VERSION:    "0"
-      USER_SERVICE_URL:                  http://user-service:8080
       CORS_ALLOWED_ORIGINS:              ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
     depends_on:
       question-db:
@@ -137,8 +132,6 @@ services:
       context: ./matching-service
       dockerfile: Dockerfile
     container_name: peerprep-matching-service
-    ports:
-      - "8082:8082"
     environment:
       SERVER_PORT:               8082
       SPRING_RABBITMQ_HOST:      rabbitmq
@@ -147,7 +140,6 @@ services:
       SPRING_RABBITMQ_PASSWORD:  ${RABBITMQ_PASS:-guest}
       SPRING_DATA_REDIS_HOST:    redis
       SPRING_DATA_REDIS_PORT:    6379
-      USER_SERVICE_URL:          http://user-service:8080
       CORS_ALLOWED_ORIGINS:      ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
       RABBITMQ_QUEUE_NAME:       ${RABBITMQ_QUEUE_NAME:-matching-queue}
       RABBITMQ_EXCHANGE_NAME:    ${RABBITMQ_EXCHANGE_NAME:-matching-exchange}
@@ -168,8 +160,6 @@ services:
       context: ./collaboration-service
       dockerfile: Dockerfile
     container_name: peerprep-collaboration-service
-    ports:
-      - "4000:4000"
     environment:
       PORT:       4000
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
@@ -188,6 +178,7 @@ services:
       - user-service
       - question-service
       - matching-service
+      - collaboration-service
     networks:
       - peerprep-net
     restart: unless-stopped
@@ -199,13 +190,12 @@ services:
       args:
         VITE_API_BASE_URL: http://localhost:8090
         VITE_MATCHING_API_BASE_URL: http://localhost:8090
-        VITE_COLLAB_SERVICE_WS_URL: ws://localhost:4000
+        VITE_COLLAB_SERVICE_WS_URL: ws://localhost:8090/collab
     container_name: peerprep-client
     ports:
       - "5173:80"
     depends_on:
       - gateway
-      - collaboration-service
     networks:
       - peerprep-net
     restart: unless-stopped

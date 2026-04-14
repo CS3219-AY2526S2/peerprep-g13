@@ -3,6 +3,7 @@ package com.g13cs3219.questionservice.controllers;
 import com.g13cs3219.questionservice.dto.requests.MatchRequest;
 import com.g13cs3219.questionservice.dto.requests.QuestionRequest;
 import com.g13cs3219.questionservice.dto.responses.QuestionResponse;
+import com.g13cs3219.questionservice.dto.responses.TopicResponse;
 import com.g13cs3219.questionservice.services.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -64,5 +65,11 @@ public class QuestionController {
     public ResponseEntity<Map<String, Object>> matchQuestion(@RequestBody MatchRequest req) {
         QuestionResponse question = questionService.matchQuestion(req.getTopic(), req.getDifficulty());
         return ResponseEntity.ok(Map.of("question", question));
+    }
+
+    @GetMapping("/topics")
+    public ResponseEntity<Map<String, Object>> getTopics() {
+        TopicResponse response = questionService.getTopics();
+        return ResponseEntity.ok(Map.of("data", response));
     }
 }

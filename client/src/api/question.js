@@ -42,4 +42,5 @@ export const questionApi = {
   update: async (questionId, body) => api.put(`/questions/${questionId}`, toServerBody(body)),
   delete: (questionId) => api.delete(`/questions/${questionId}`),
   match: (body) => api.post("/questions/match", body),
+  topics: async () => api.get("/questions/topics"),
 };
