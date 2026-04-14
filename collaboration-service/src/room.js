@@ -6,6 +6,7 @@ import * as decoding from "lib0/decoding";
 
 const MESSAGE_SYNC = 0;
 const MESSAGE_AWARENESS = 1;
+const MESSAGE_END_SESSION = 2;
 
 export class YjsRoom {
   constructor(roomId) {
@@ -115,7 +116,25 @@ export class YjsRoom {
         decoding.readVarUint8Array(decoder),
         ws
       );
+    } else if (messageType === MESSAGE_END_SESSION) {
+      const userId = this.clients.get(ws)?.userId ?? "unknown";
+      console.log(`[Room ${this.roomId}] User "${userId}" ended the session — notifying others.`);
+      this.broadcastEndSession(ws);
     }
+  }
+
+  /**
+   * Sends a MESSAGE_END_SESSION signal to all clients except the sender.
+   */
+  broadcastEndSession(senderWs) {
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, MESSAGE_END_SESSION);
+    const message = encoding.toUint8Array(encoder);
+    this.clients.forEach((_, clientWs) => {
+      if (clientWs !== senderWs && clientWs.readyState === 1 /* OPEN */) {
+        clientWs.send(message);
+      }
+    });
   }
 
   /**
