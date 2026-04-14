@@ -9,18 +9,13 @@ export default function QuestionDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isQuestionManager } = useAuth();
-
-  function startCollaboration() {
-    const roomId = crypto.randomUUID().slice(0, 8);
-    navigate(`/collaborate/${roomId}?questionId=${encodeURIComponent(id ?? "")}`);
-  }
-
+  
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
+  
   useEffect(() => {
     async function load() {
       try {
@@ -35,6 +30,18 @@ export default function QuestionDetailPage() {
     load();
   }, [id]);
 
+  function startCollaboration() {
+    const roomId = crypto.randomUUID().slice(0, 8);
+    if (!question) {
+      setError("No question found");
+      return;
+    }
+
+    navigate(`/collaborate/${roomId}`, {
+      state: { question }
+    });
+  }
+  
   async function handleDelete() {
     setDeleting(true);
     try {

@@ -46,7 +46,7 @@ public class MatchingPool {
     /**
      * Find a match for a user based on the specified topic and difficulty.
      */
-    public Optional<MatchResult> findMatch(int userId, String topic, String difficulty, String type) {
+    public Optional<MatchResult> findMatch(Long userId, String topic, String difficulty, String type) {
         String key = buildKey(topic, difficulty);
         Optional<MatchResult> match = findExactMatch(userId, key);
         if (match.isPresent()) return match;
@@ -101,7 +101,7 @@ public class MatchingPool {
         cursor.close();
     }
 
-    private Optional<MatchResult> findExactMatch(int userId, String key) {
+    private Optional<MatchResult> findExactMatch(Long userId, String key) {
         if (key == null) return Optional.empty();
 
         Set<String> candidates = redisTemplate.opsForZSet().range(key, 0, 0);
@@ -113,14 +113,14 @@ public class MatchingPool {
         redisTemplate.opsForZSet().remove(key, match);
         return Optional.of(MatchResult.builder()
                 .userId1(userId)
-                .userId2(Integer.parseInt(match))
+                .userId2(Long.parseLong(match))
                 .topic(key.split(":")[1])
                 .difficulty(key.split(":")[2])
                 .build()
         );
     }
 
-    private Optional<MatchResult> findSameDifficultyMatch(int userId, String difficulty) {
+    private Optional<MatchResult> findSameDifficultyMatch(Long userId, String difficulty) {
         if (difficulty == null) return Optional.empty();
 
         ScanOptions options = ScanOptions.scanOptions().match("queue:*:" + difficulty).count(100).build();
