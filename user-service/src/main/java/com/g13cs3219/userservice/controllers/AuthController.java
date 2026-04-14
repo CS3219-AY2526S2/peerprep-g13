@@ -44,6 +44,10 @@ public class AuthController {
     @GetMapping("/user/auth")
     public ResponseEntity<Map<String, Object>> getAuth(Authentication authentication) {
         AuthResponse authResponse = authService.getAuth(authentication);
-        return ResponseEntity.ok(Map.of("data", authResponse));
+        return ResponseEntity.ok()
+                .header("X-User-Id", String.valueOf(authResponse.getUserId()))
+                .header("X-User-Role", authResponse.getRole().name())
+                .header("X-User-Email", authResponse.getEmail())
+                .body(Map.of("data", authResponse));
     }
 }
