@@ -2,12 +2,12 @@ name: CI — matching-service
 
 on:
   push:
-    branches: [main, branch-D3]
+    branches: [main, branch-D3, branch-D4]
     paths:
       - "matching-service/**"
       - ".github/workflows/ci-matching-service.yml"
   pull_request:
-    branches: [main, branch-D3]
+    branches: [main, branch-D3, branch-D4]
     paths:
       - "matching-service/**"
       - ".github/workflows/ci-matching-service.yml"
