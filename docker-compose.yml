@@ -176,3 +176,24 @@ services:
     networks:
       - peerprep-net
     restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8080
+        VITE_QUESTION_API_BASE_URL: http://localhost:8081
+        VITE_MATCHING_API_BASE_URL: http://localhost:8082
+        VITE_COLLAB_SERVICE_WS_URL: ws://localhost:4000
+    container_name: peerprep-client
+    ports:
+      - "5173:80"
+    depends_on:
+      - user-service
+      - question-service
+      - matching-service
+      - collaboration-service
+    networks:
+      - peerprep-net
+    restart: unless-stopped
