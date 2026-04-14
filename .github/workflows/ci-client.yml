@@ -14,6 +14,10 @@ on:
       - "gateway/**"
       - ".github/workflows/ci-client.yml"
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/peerprep-client
+
 jobs:
   build-test-push:
     runs-on: ubuntu-latest
@@ -40,3 +44,33 @@ jobs:
           VITE_MATCHING_API_BASE_URL: http://localhost:8090
           VITE_COLLAB_SERVICE_WS_URL: ws://localhost:4000
         run: npm run build
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=staging,enable=${{ github.ref == 'refs/heads/branch-D3' }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_API_BASE_URL=http://47.129.119.71:8090
+            VITE_MATCHING_API_BASE_URL=http://47.129.119.71:8090
+            VITE_COLLAB_SERVICE_WS_URL=ws://47.129.119.71:8090
