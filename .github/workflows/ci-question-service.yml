@@ -2,12 +2,12 @@ name: CI — question-service
 
 on:
   push:
-    branches: [main, branch-D3]
+    branches: [main, branch-D3, branch-D4]
     paths:
       - "question-service/**"
       - ".github/workflows/ci-question-service.yml"
   pull_request:
-    branches: [main, branch-D3]
+    branches: [main, branch-D3, branch-D4]
     paths:
       - "question-service/**"
       - ".github/workflows/ci-question-service.yml"

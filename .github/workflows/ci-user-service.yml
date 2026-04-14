@@ -2,12 +2,12 @@ name: CI — user-service
 
 on:
   push:
-    branches: [main, branch-D3]
+    branches: [main, branch-D3, branch-D4]
     paths:
       - "user-service/**"
       - ".github/workflows/ci-user-service.yml"
   pull_request:
-    branches: [main, branch-D3]
+    branches: [main, branch-D3, branch-D4]
     paths:
       - "user-service/**"
       - ".github/workflows/ci-user-service.yml"

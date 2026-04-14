@@ -144,6 +144,7 @@ services:
       RABBITMQ_QUEUE_NAME:       ${RABBITMQ_QUEUE_NAME:-matching-queue}
       RABBITMQ_EXCHANGE_NAME:    ${RABBITMQ_EXCHANGE_NAME:-matching-exchange}
       RABBITMQ_ROUTING_KEY:      ${RABBITMQ_ROUTING_KEY:-matching-key}
+      QUESTION_SERVICE_URL:      http://peerprep-question-service:8081
     depends_on:
       rabbitmq:
         condition: service_healthy
