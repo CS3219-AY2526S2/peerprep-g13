@@ -89,8 +89,6 @@ services:
       context: ./user-service
       dockerfile: Dockerfile
     container_name: peerprep-user-service
-    ports:
-      - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL:             jdbc:postgresql://user-db:5432/${USER_DB_NAME:-user_db}
       DB_USERNAME:                       ${DB_USERNAME:-postgres}
@@ -113,8 +111,6 @@ services:
       context: ./question-service
       dockerfile: Dockerfile
     container_name: peerprep-question-service
-    ports:
-      - "8081:8081"
     environment:
       SPRING_DATASOURCE_URL:             jdbc:postgresql://question-db:5432/${QUESTION_DB_NAME:-question_db}
       DB_USERNAME:                       ${DB_USERNAME:-postgres}
@@ -136,8 +132,6 @@ services:
       context: ./matching-service
       dockerfile: Dockerfile
     container_name: peerprep-matching-service
-    ports:
-      - "8082:8082"
     environment:
       SERVER_PORT:               8082
       SPRING_RABBITMQ_HOST:      rabbitmq
@@ -166,8 +160,6 @@ services:
       context: ./collaboration-service
       dockerfile: Dockerfile
     container_name: peerprep-collaboration-service
-    ports:
-      - "4000:4000"
     environment:
       PORT:       4000
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
