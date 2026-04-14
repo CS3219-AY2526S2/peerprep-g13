@@ -1,22 +1,13 @@
 name: CD — Deploy to AWS EC2
 
 on:
-  workflow_run:
-    workflows:
-      - "CI — client"
-      - "CI — user-service"
-      - "CI — question-service"
-      - "CI — matching-service"
-      - "CI — collaboration-service"
-      - "CI — gateway"
+  push:
     branches: [branch-D4, main]
-    types: [completed]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout
