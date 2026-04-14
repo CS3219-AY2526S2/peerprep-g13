@@ -1,15 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Button, Card, Center, Select, Space, Stack, Text, TextInput } from '@mantine/core';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Button, Card, Center, Select, Space, Stack, Text } from '@mantine/core';
 import { matchingApi } from '../../api/matching';
 import { useAuth } from '../../context/ContextProvider';
 import { Client } from '@stomp/stompjs';
-import { questionApi } from '../../api/question';
 import { useNavigate } from 'react-router-dom';
+import { questionApi } from '../../api/question';
 
 export default function MatchPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
+  const [topicList, setTopicList] = useState([]);
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [isMatching, setIsMatching] = useState(false);
@@ -18,7 +19,32 @@ export default function MatchPage() {
   const clientRef = useRef(null);
   const navigateRef = useRef(navigate);
 
+  const capitalizeWords = useCallback((str) => {
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }, []);
+
   useEffect(() => { navigateRef.current = navigate; }, [navigate]);
+
+  useEffect(() => {
+    async function fetchTopicList() {
+      try {
+        const topics = await questionApi.topics();
+        const formatted = topics.data.data.topics.map(topic => {
+          return { value: topic, label: capitalizeWords(topic) };
+        });
+
+        setTopicList(formatted);
+      } catch (err) {
+        setErr(err?.response?.data?.message || "Failed to load topics.");
+      }
+    };
+    
+    fetchTopicList();
+  }, [setTopicList, setErr, questionApi, capitalizeWords]);
 
   useEffect(() => {
     if (!isMatching) return;
@@ -102,21 +128,19 @@ export default function MatchPage() {
     }
   };
 
-  const fetchQuestion = async (topic, difficulty) => {
-    try {
-      const response = await questionApi.match({ topic, difficulty });
-      return response.data.question;
-    } catch (error) {
-      console.error('Error fetching random question:', error);
-      return null;
+  const startCollaboration = (userId1, userId2, question) => {
+    if (!question) {
+      console.error('[WS] Invalid match payload: missing question or questionId.', { userId1, userId2, question });
+      setErr('Matched session is missing question data. Please try again.');
+      return;
     }
-  };
 
-  const startCollaboration = (userId1, userId2, questionId) => {
-    const roomId = [userId1, userId2].sort().join('-') + '-' + questionId;
-    const url = `/collaborate/${roomId}?questionId=${encodeURIComponent(questionId ?? "")}`;
+    const roomId = [userId1, userId2].sort().join('-') + '-' + question.questionId;
+    const url = `/collaborate/${roomId}`;
     console.log('[WS] Navigating to:', url);
-    navigateRef.current(url);
+    navigateRef.current(url, {
+      state: { question }
+    });
   };
 
   const handleMatchMessage = async (data) => {
@@ -140,14 +164,7 @@ export default function MatchPage() {
         const matchInfo = JSON.parse(data);
         console.log('[WS] Match info:', matchInfo);
 
-        const question = await fetchQuestion(matchInfo.topic, matchInfo.difficulty);
-        console.log('[WS] Question fetched:', question);
-
-        if (question) {
-          startCollaboration(matchInfo.userId1, matchInfo.userId2, question.questionId);
-        } else {
-          setErr('Failed to fetch question for the match.');
-        }
+        startCollaboration(matchInfo.userId1, matchInfo.userId2, matchInfo.question);
       } catch (e) {
         console.error('[WS] Error processing match:', e);
         setErr('Unexpected error processing match result.');
@@ -172,7 +189,6 @@ export default function MatchPage() {
   const handleLooseMatch = async () => {
     try {
       await matchingApi.loosematch({ userId: user.userId, topic, difficulty });
-      setTimer(15);
     } catch (error) {
       setErr('Failed to switch to loose match.');
     }
@@ -199,19 +215,20 @@ export default function MatchPage() {
                       </Button>
                     </div>
                     <Space h="md" />
+                    {timer <= 15 &&
                     <Button fullWidth variant="subtle" color="gray" size="sm" onClick={handleLooseMatch}>
                       Loose Match
-                    </Button>
+                    </Button>}
                     {err && (<><Space h="sm" /><Text c="red" size="sm">{err}</Text></>)}
                   </div>
                   : <div className="form-container">
                     <form onSubmit={handleMatch}>
-                      <TextInput
-                          placeholder="Arrays"
-                          label="Topic"
-                          size="md"
-                          value={topic}
-                          onChange={(event) => setTopic(event.currentTarget.value)}
+                      <Select
+                        label="Topic"
+                        placeholder="Pick one"
+                        value={topic}
+                        onChange={setTopic}
+                        data={topicList}
                       />
                       <Space h="lg" />
                       <Select

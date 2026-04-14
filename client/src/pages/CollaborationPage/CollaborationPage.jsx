@@ -1,23 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { yCollab } from "y-codemirror.next";
 import { EditorView, lineNumbers, highlightActiveLine, keymap } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { defaultKeymap, historyKeymap, history, indentWithTab } from "@codemirror/commands";
-import { questionApi } from "../../api/question";
 import { useAuth } from "../../context/ContextProvider";
 import DifficultyBadge from "../../components/questions/DifficultyBadge";
 import styles from "./CollaborationPage.module.css";
 
 export default function CollaborationPage() {
   const { roomId } = useParams();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const questionId = searchParams.get("questionId");
+  const location = useLocation();
   const { user } = useAuth(); // kept in state so userRef stays current
-
+  
   const [question, setQuestion] = useState(null);
   const [connected, setConnected] = useState(false);
   const [roomFull, setRoomFull] = useState(false);
@@ -46,14 +44,6 @@ export default function CollaborationPage() {
   }
 
   useEffect(() => {
-    if (!questionId) return;
-    questionApi
-      .getById(questionId)
-      .then((res) => setQuestion(res.data.question))
-      .catch((err) => console.error("Failed to load question", questionId, err));
-  }, [questionId]);
-
-  useEffect(() => {
     if (!editorRef.current || !roomId) return;
 
     let view = null;
@@ -63,6 +53,20 @@ export default function CollaborationPage() {
     // Defer setup so React StrictMode's double-invoke cleanup cancels before anything is created
     const timer = setTimeout(() => {
       ydoc = new Y.Doc();
+
+      const ymeta = ydoc.getMap("meta");
+      if (!ymeta.has("question") && location.state?.question) {
+        ymeta.set("question", location.state.question);
+      }
+
+      const updateQuestion = () => {
+        const question = ymeta.get("question");
+        if (question) setQuestion(question);
+      };
+
+      updateQuestion();
+      ymeta.observe(updateQuestion);
+
       let wsUrl =
         import.meta.env.VITE_COLLAB_SERVICE_WS_URL || "ws://localhost:4000";
       // Enforce encrypted WebSocket in non-local environments
