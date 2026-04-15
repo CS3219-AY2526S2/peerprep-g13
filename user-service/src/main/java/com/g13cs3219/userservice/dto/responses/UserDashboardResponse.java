@@ -18,7 +18,7 @@ public class UserDashboardResponse {
         return UserDashboardResponse.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())
-                .role(user.getRole().getId())
+                .role(user.getRole().name().toLowerCase())
                 .name(user.getName())
                 .avatarUrl(user.getAvatarUrl())
                 .preferredLanguage(user.getPreferredLanguage())
