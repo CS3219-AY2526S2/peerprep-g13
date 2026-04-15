@@ -11,5 +11,4 @@ public class JacksonConfig {
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
     }
-    
 }

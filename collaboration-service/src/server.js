@@ -7,10 +7,16 @@ import redis from "./redis.js";
 const rooms = new Map();
 
 function getRoom(roomId) {
-  if (!rooms.has(roomId)) {
-    rooms.set(roomId, new YjsRoom(roomId));
-  }
   return rooms.get(roomId);
+}
+
+function getOrCreateRoom(roomId) {
+  let room = getRoom(roomId);
+  if (!room) {
+    room = new YjsRoom(roomId);
+    rooms.set(roomId, room);
+  }
+  return room;
 }
 
 async function deleteRoomIfEmpty(roomId) {
@@ -23,8 +29,12 @@ async function deleteRoomIfEmpty(roomId) {
         r.destroy();
         rooms.delete(roomId);
         // Permanently close the room in Redis so reconnects are rejected (Issue 3)
-        await redis.del(`room:${roomId}`);
-        console.log(`[Room ${roomId}] Destroyed after grace period and removed from Redis.`);
+        try {
+          await redis.del(`room:${roomId}`);
+          console.log(`[Room ${roomId}] Destroyed after grace period and removed from Redis.`);
+        } catch (error) {
+          console.error(`[Room ${roomId}] Destroyed after grace period, but failed to remove from Redis.`, error);
+        }
       }
     }, 30_000);
   }
@@ -85,7 +95,7 @@ export function setupWebSocketServer(httpServer) {
 
     console.log(`[WS] ✓ User "${userEmail}" authorized for room "${roomId}"`);
 
-    const room = getRoom(roomId);
+    const room = getOrCreateRoom(roomId);
 
     // Write questionId into Yjs shared map "room-state" so all clients receive it
     // on initial sync (Issue 1). Set only once — idempotent on reconnect.

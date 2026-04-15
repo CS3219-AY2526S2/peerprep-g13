@@ -17,8 +17,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g13cs3219.matching_service.dto.requests.QuestionRequest;
 import com.g13cs3219.matching_service.dto.responses.MatchResult;
-import com.g13cs3219.matching_service.dto.responses.QuestionResponse;
-import com.g13cs3219.matching_service.dto.responses.QuestionResponseWrapper;
 
 @Service
 public class MessageService {
@@ -68,11 +66,10 @@ public class MessageService {
         log.info("Sending match found message to users: {} and {}", match.getUserId1(), match.getUserId2());
 
         QuestionRequest request = QuestionRequest.buildQuestionRequest(match.getTopic(), match.getDifficulty());
-        QuestionResponse randomQuestion = getRandomQuestion(request).getQuestion();
+        Long questionId = fetchQuestionId(request);
 
-        match.setQuestion(randomQuestion);
-        match.setQuestionId(randomQuestion.getQuestionId());
-        log.info("Random question found: {}", randomQuestion);
+        match.setQuestionId(questionId);
+        log.info("Assigned questionId {} to room {}", questionId, match.getRoomId());
 
         // Look up participant emails from the pool's email index
         String email1 = redisTemplate.opsForValue().get("user-email:" + match.getUserId1());
@@ -130,11 +127,12 @@ public class MessageService {
         }
     }
 
-    private QuestionResponseWrapper getRandomQuestion(QuestionRequest request) {
-        QuestionResponseWrapper response = webClientBuilder
+    @SuppressWarnings("unchecked")
+    private Long fetchQuestionId(QuestionRequest request) {
+        Map<String, Object> response = webClientBuilder
                 .build()
                 .post()
-                .uri(questionServiceURL + "/questions/match")
+                .uri(questionServiceURL + "/questions/match/id")
                 .header("X-Internal-Request", "true")
                 .bodyValue(request)
                 .retrieve()
@@ -142,13 +140,13 @@ public class MessageService {
                         res.bodyToMono(String.class)
                                 .map(body -> new RuntimeException("Error: " + body))
                 )
-                .bodyToMono(QuestionResponseWrapper.class)
+                .bodyToMono(Map.class)
                 .timeout(Duration.ofSeconds(3))
                 .block();
 
-        if (response == null) {
-            throw new RuntimeException("Empty response from question service");
+        if (response == null || !response.containsKey("questionId")) {
+            throw new RuntimeException("Empty or invalid response from question service");
         }
-        return response;
+        return ((Number) response.get("questionId")).longValue();
     }
 }
