@@ -83,6 +83,163 @@ A modern peer programming platform that connects programmers for real-time colla
 
 ---
 
+## 🚀 Setup Instructions
+
+### Prerequisites
+
+Before running PeerPrep, ensure you have the following installed:
+
+- **Docker & Docker Compose** (recommended for easiest setup)
+- **Node.js 18+** (for local frontend development)
+- **Java 21** (for local backend development)
+- **Maven** (for building Java services)
+
+### Quick Start with Docker
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/CS3219-AY2526S2/peerprep-g13
+   cd peerprep-g13
+   ```
+
+2. **Create environment file**
+   ```bash
+   # Create .env file in the root directory
+   cp .env  # or create manually
+   ```
+
+3. **Start all services**
+   ```bash
+   docker-compose up --build
+   ```
+
+4. **Access the application**
+   - **Frontend:** http://localhost:5173
+   - **Admin Panel:** http://localhost:5173/admin/users (admin only)
+
+### Environment Configuration
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Database Configuration
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+USER_DB_NAME=user_db
+QUESTION_DB_NAME=question_db
+
+# Authentication
+JWT_SECRET=your-secret-key-here-change-in-production
+
+# RabbitMQ Configuration
+RABBITMQ_USER=guest
+RABBITMQ_PASS=guest
+RABBITMQ_QUEUE_NAME=matching-queue
+RABBITMQ_EXCHANGE_NAME=matching-exchange
+RABBITMQ_ROUTING_KEY=matching-key
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+
+# Frontend API URLs
+VITE_API_BASE_URL=http://localhost:8090
+VITE_MATCHING_API_BASE_URL=http://localhost:8090
+VITE_COLLAB_SERVICE_WS_URL=ws://localhost:8090/collab
+```
+
+### Alternative: Local Development Setup
+
+If you prefer to run services individually:
+
+1. **Start databases and infrastructure**
+   ```bash
+   docker-compose up user-db question-db redis rabbitmq
+   ```
+
+2. **Start backend services**
+   ```bash
+   # Terminal 1: User Service
+   cd user-service
+   mvn spring-boot:run
+
+   # Terminal 2: Question Service
+   cd question-service
+   mvn spring-boot:run
+
+   # Terminal 3: Matching Service
+   cd matching-service
+   mvn spring-boot:run
+
+   # Terminal 4: Collaboration Service
+   cd collaboration-service
+   npm install
+   npm run dev
+   ```
+
+3. **Start frontend**
+   ```bash
+   cd client
+   npm install
+   npm run dev
+   ```
+
+### Docker Commands
+
+```bash
+# Start all services
+docker-compose up --build
+
+# Run in background
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+
+# Remove volumes (clean database)
+docker-compose down -v
+
+# Restart specific service
+docker-compose restart user-service
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+**Services won't start:**
+- Ensure ports 5433, 5434, 6379, 5672, 15672, 5173, 8090 are available
+- Check if Docker is running: `docker --version`
+
+**Database connection errors:**
+- Wait for database containers to be healthy: `docker-compose ps`
+- Check database logs: `docker-compose logs user-db`
+
+**Frontend not loading:**
+- Ensure all backend services are running
+- Check browser console for CORS errors
+- Verify `.env` file has correct URLs
+
+**Matching not working:**
+- Ensure RabbitMQ and Redis are running
+- Check matching service logs: `docker-compose logs matching-service`
+
+#### Reset Everything
+```bash
+# Stop and remove all containers, networks, and volumes
+docker-compose down -v --remove-orphans
+
+# Clean up Docker system
+docker system prune -a --volumes
+
+# Restart fresh
+docker-compose up --build
+```
+
+---
+
 ## Matching Logic
 
 The matching system in PeerPrep intelligently pairs users for collaborative coding sessions:
@@ -212,6 +369,6 @@ Your session will be preserved for a short period. Try refreshing the page to re
 
 ## Contributors
 
-Nguyen Tran Thanh Minh
-Vu Hoang Quoc Bao
-Chu Duong Huy Phuoc 
+- Nguyen Tran Thanh Minh
+- Vu Hoang Quoc Bao
+- Chu Duong Huy Phuoc
