@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import * as Y from "yjs";
 import { questionApi } from "../../api/question";
 import { WebsocketProvider } from "y-websocket";
@@ -11,12 +11,26 @@ import { useAuth } from "../../context/ContextProvider";
 import DifficultyBadge from "../../components/questions/DifficultyBadge";
 import styles from "./CollaborationPage.module.css";
 
+// Normalise question fields from any source (matching-service or question-service)
+// so the rest of the component always sees `examples` (array) and `topics` (array).
+const normaliseQuestion = (q) => {
+  if (!q) return null;
+  return {
+    ...q,
+    examples: q.examples ?? q.example ?? [],
+    topics: q.topics ?? (q.topic ? [q.topic] : []),
+  };
+};
+
 export default function CollaborationPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth(); // kept in state so userRef stays current
-  
-  const [question, setQuestion] = useState(null);
+  const location = useLocation();
+  const { user } = useAuth();
+
+  const [question, setQuestion] = useState(
+    normaliseQuestion(location.state?.question ?? null)
+  );
   const [connected, setConnected] = useState(false);
   const [roomUsers, setRoomUsers] = useState([]);
   const [copied, setCopied] = useState(false);
@@ -30,9 +44,20 @@ export default function CollaborationPage() {
   const providerRef = useRef(null);
   const viewRef = useRef(null);
   const ydocRef = useRef(null);
-  const knownUsersRef = useRef(null); // null = not yet initialized
+  const knownUsersRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => () => clearTimeout(copiedTimerRef.current), []);
+
+  // Always fetch the full question from question-service on mount.
+  // This guarantees complete data (examples, constraints) regardless of
+  // what the matching-service payload contained.
+  useEffect(() => {
+    const qId = location.state?.question?.questionId;
+    if (!qId) return;
+    questionApi.getById(qId)
+      .then(res => setQuestion(normaliseQuestion(res.data.question)))
+      .catch(err => console.error("[Collab] Failed to fetch full question:", err));
+  }, []);
 
   function pushNotification(message, type) {
     const id = Date.now() + Math.random();
@@ -49,44 +74,37 @@ export default function CollaborationPage() {
     let provider = null;
     let ydoc = null;
 
-    // Defer setup so React StrictMode's double-invoke cleanup cancels before anything is created
     const timer = setTimeout(() => {
       ydoc = new Y.Doc();
 
-      // Load question from server-authoritative Yjs map "room-state".
-      // The collaboration-service writes questionId into this map on connection
-      // from the Redis room entry — do not rely on URL params or navigation state.
       const roomState = ydoc.getMap("room-state");
       const loadQuestion = async () => {
         const questionId = roomState.get("questionId");
         if (questionId == null) return;
         try {
           const res = await questionApi.getById(questionId);
-          setQuestion(res.data.question);
+          setQuestion(normaliseQuestion(res.data.question));
         } catch (err) {
           console.error("[Collab] Failed to load question:", err);
         }
       };
       roomState.observe(loadQuestion);
 
-      let wsUrl =
-        import.meta.env.VITE_COLLAB_SERVICE_WS_URL || "ws://localhost:4000";
-      // Enforce encrypted WebSocket in non-local environments
+      let wsUrl = import.meta.env.VITE_COLLAB_SERVICE_WS_URL || "ws://localhost:4000";
       if (!wsUrl.startsWith("wss://") && !wsUrl.includes("localhost") && !wsUrl.includes("127.0.0.1")) {
         wsUrl = wsUrl.replace(/^ws:\/\//, "wss://");
       }
       const token = localStorage.getItem("accessToken");
 
-      provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
-        params: { token },
-      });
+      provider = new WebsocketProvider(wsUrl, roomId, ydoc, { params: { token } });
       providerRef.current = provider;
+
+      provider.on("sync", (isSynced) => { if (isSynced) loadQuestion(); });
+      loadQuestion();
 
       const ytext = ydoc.getText("codemirror");
 
-      // Register listener before setLocalStateField so the first change event is captured
       provider.awareness.on("change", () => {
-        // Deduplicate by userId — same user with multiple tabs = 1 person
         const seen = new Map();
         for (const s of provider.awareness.getStates().values()) {
           const u = s?.user;
@@ -98,8 +116,17 @@ export default function CollaborationPage() {
         const myId = localStorage.getItem("userId") || "anonymous";
 
         if (knownUsersRef.current === null) {
-          // First fire — record initial state without showing notifications
-          knownUsersRef.current = new Map(seen);
+          // Initialize with only myself, then immediately notify for anyone already present
+          const onlyMe = new Map();
+          const myEntry = seen.get(myId);
+          if (myEntry) onlyMe.set(myId, myEntry);
+          knownUsersRef.current = onlyMe;
+
+          for (const [uid, u] of seen) {
+            if (uid !== myId) {
+              pushNotification(`${u.username} joined`, "join");
+            }
+          }
         } else {
           const prev = knownUsersRef.current;
           for (const [uid, u] of seen) {
@@ -126,20 +153,18 @@ export default function CollaborationPage() {
       });
 
       provider.on("connection-close", (event) => {
-        if (event?.code === 4004) {
+        if (event?.code === 4004 || event?.code === 4003) {
           provider.shouldConnect = false;
-          navigate("/match", { state: { error: "Room not found. Please start a new match." } });
-          return;
-        }
-        if (event?.code === 4003) {
-          provider.shouldConnect = false;
-          navigate("/match", { state: { error: "You are not a participant of this room." } });
+          provider.disconnect();
+          const error = event.code === 4004
+            ? "Room not found. Please start a new match."
+            : "You are not a participant of this room.";
+          navigate("/matching", { state: { error } });
           return;
         }
         setConnected(false);
       });
 
-      // Listen for MESSAGE_END_SESSION (type byte = 2) from the partner
       const handleWsMessage = (event) => {
         try {
           const buf = event.data instanceof ArrayBuffer
@@ -149,7 +174,6 @@ export default function CollaborationPage() {
         } catch (_) { /* ignore malformed */ }
       };
       provider.ws?.addEventListener("message", handleWsMessage);
-      // Re-attach after reconnects (y-websocket recreates provider.ws on reconnect)
       provider.on("status", ({ status }) => {
         if (status === "connected") {
           provider.ws?.addEventListener("message", handleWsMessage);
@@ -197,7 +221,6 @@ export default function CollaborationPage() {
   function sendEndSessionMessage() {
     const ws = providerRef.current?.ws;
     if (ws?.readyState === WebSocket.OPEN) {
-      // MESSAGE_END_SESSION = 2, encoded as a single varint byte
       ws.send(new Uint8Array([2]));
     }
   }
@@ -205,7 +228,6 @@ export default function CollaborationPage() {
   function confirmEndSession() {
     sendEndSessionMessage();
     setShowEndConfirm(false);
-    // Small delay so the message reaches the partner before we disconnect
     setTimeout(() => {
       viewRef.current?.destroy();
       providerRef.current?.destroy();
@@ -222,7 +244,7 @@ export default function CollaborationPage() {
     }).catch((err) => console.error("Failed to copy link", err));
   }
 
-  const topics = question?.topics ?? (question?.topic ? [question.topic] : []);
+  const topics = question?.topics ?? [];
 
   return (
     <div className={styles.page}>

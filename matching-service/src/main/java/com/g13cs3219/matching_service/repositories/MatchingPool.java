@@ -167,4 +167,12 @@ public class MatchingPool {
         }
         return "queue:" + topic.trim().toLowerCase() + ":" + difficulty.trim().toLowerCase();
     }
+
+    public void storeUserEmail(Long userId, String email) {
+        redisTemplate.opsForValue().set(
+            "user-email:" + userId,
+            email,
+            7200, TimeUnit.SECONDS
+        );
+    }
 }

@@ -3,19 +3,20 @@ import { Button, Card, Center, Select, Space, Stack, Text } from '@mantine/core'
 import { matchingApi } from '../../api/matching';
 import { useAuth } from '../../context/ContextProvider';
 import { Client } from '@stomp/stompjs';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { questionApi } from '../../api/question';
 
 export default function MatchPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [topicList, setTopicList] = useState([]);
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [isMatching, setIsMatching] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState(location.state?.error ?? '');
   const clientRef = useRef(null);
   const navigateRef = useRef(navigate);
 
@@ -154,7 +155,9 @@ export default function MatchPage() {
           setErr('Matched session is missing room data. Please try again.');
         } else {
           console.log('[WS] Navigating to:', `/collaborate/${matchInfo.roomId}`);
-          navigateRef.current(`/collaborate/${matchInfo.roomId}`);
+          navigateRef.current(`/collaborate/${matchInfo.roomId}`, {
+            state: { question: matchInfo.question }
+          });
         }
       } catch (e) {
         console.error('[WS] Error processing match:', e);
