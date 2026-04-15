@@ -96,7 +96,10 @@ export default function CollaborationPage() {
       }
       const token = localStorage.getItem("accessToken");
 
-      provider = new WebsocketProvider(wsUrl, roomId, ydoc, { params: { token } });
+      provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
+         params: { token },
+         disableBc: true,
+         });
       providerRef.current = provider;
 
       provider.on("sync", (isSynced) => { if (isSynced) loadQuestion(); });
