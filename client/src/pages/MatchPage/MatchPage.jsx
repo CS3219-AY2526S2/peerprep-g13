@@ -15,6 +15,7 @@ export default function MatchPage() {
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [isMatching, setIsMatching] = useState(false);
+  const [isLooseMatching, setIsLooseMatching] = useState(false);
   const [timer, setTimer] = useState(0);
   const [err, setErr] = useState(location.state?.error ?? '');
   const clientRef = useRef(null);
@@ -183,6 +184,7 @@ export default function MatchPage() {
   const handleLooseMatch = async () => {
     try {
       await matchingApi.loosematch({ userId: user.userId, topic, difficulty });
+      setIsLooseMatching(true);
     } catch (error) {
       setErr('Failed to switch to loose match.');
     }
@@ -202,7 +204,7 @@ export default function MatchPage() {
             <Stack p="xl">
               {isMatching
                   ? <div>
-                    <Text size="lg" fw={500}>Finding a match... {timer}s</Text>
+                    <Text size="lg" fw={500}>Finding a {isLooseMatching ? 'loose' : ''} match... {timer}s</Text>
                     <div className="button-container">
                       <Button fullWidth variant="outline" color="red" size="md" onClick={handleCancel}>
                         Cancel Match
