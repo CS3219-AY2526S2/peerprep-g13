@@ -240,14 +240,46 @@ export default function CollaborationPage() {
     }, 300);
   }
 
+  // function copyRoomLink() {
+  //   navigator.clipboard.writeText(window.location.href).then(() => {
+  //     setCopied(true);
+  //     clearTimeout(copiedTimerRef.current);
+  //     copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+  //   }).catch((err) => console.error("Failed to copy link", err));
+  // }
+
   function copyRoomLink() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+    const text = window.location.href;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          setCopied(true);
+          clearTimeout(copiedTimerRef.current);
+          copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+        });
+        return;
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      document.execCommand("copy");
+
+      document.body.removeChild(textarea);
+
       setCopied(true);
       clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
-    }).catch((err) => console.error("Failed to copy link", err));
+    } catch (err) {
+      console.error("Failed to copy link", err);
+    }
   }
-
   const topics = question?.topics ?? [];
 
   return (
