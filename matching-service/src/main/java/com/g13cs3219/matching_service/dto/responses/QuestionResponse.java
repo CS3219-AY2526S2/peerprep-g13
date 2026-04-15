@@ -12,7 +12,7 @@ public class QuestionResponse {
     private String topic;
     private String difficulty;
     private String prompt;
-    private List<String> examples;
+    private List<String> example;
     private List<String> constraints;
     private List<String> imageUrls;
     private Long createdBy;

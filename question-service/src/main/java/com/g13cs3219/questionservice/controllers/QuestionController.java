@@ -67,6 +67,12 @@ public class QuestionController {
         return ResponseEntity.ok(Map.of("question", question));
     }
 
+    @PostMapping("/match/id")
+    public ResponseEntity<Map<String, Object>> matchQuestionId(@RequestBody MatchRequest req) {
+        QuestionResponse question = questionService.matchQuestion(req.getTopic(), req.getDifficulty());
+        return ResponseEntity.ok(Map.of("questionId", question.getQuestionId()));
+    }
+
     @GetMapping("/topics")
     public ResponseEntity<Map<String, Object>> getTopics() {
         TopicResponse response = questionService.getTopics();

@@ -3,19 +3,20 @@ import { Button, Card, Center, Select, Space, Stack, Text } from '@mantine/core'
 import { matchingApi } from '../../api/matching';
 import { useAuth } from '../../context/ContextProvider';
 import { Client } from '@stomp/stompjs';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { questionApi } from '../../api/question';
 
 export default function MatchPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [topicList, setTopicList] = useState([]);
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [isMatching, setIsMatching] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState(location.state?.error ?? '');
   const clientRef = useRef(null);
   const navigateRef = useRef(navigate);
 
@@ -128,21 +129,6 @@ export default function MatchPage() {
     }
   };
 
-  const startCollaboration = (userId1, userId2, question) => {
-    if (!question) {
-      console.error('[WS] Invalid match payload: missing question or questionId.', { userId1, userId2, question });
-      setErr('Matched session is missing question data. Please try again.');
-      return;
-    }
-
-    const roomId = [userId1, userId2].sort().join('-') + '-' + question.questionId;
-    const url = `/collaborate/${roomId}`;
-    console.log('[WS] Navigating to:', url);
-    navigateRef.current(url, {
-      state: { question }
-    });
-  };
-
   const handleMatchMessage = async (data) => {
     console.log('[WS] Received match message:', data);
 
@@ -164,7 +150,15 @@ export default function MatchPage() {
         const matchInfo = JSON.parse(data);
         console.log('[WS] Match info:', matchInfo);
 
-        startCollaboration(matchInfo.userId1, matchInfo.userId2, matchInfo.question);
+        if (!matchInfo.roomId) {
+          console.error('[WS] Invalid match payload: missing roomId.', matchInfo);
+          setErr('Matched session is missing room data. Please try again.');
+        } else {
+          console.log('[WS] Navigating to:', `/collaborate/${matchInfo.roomId}`);
+          navigateRef.current(`/collaborate/${matchInfo.roomId}`, {
+            state: { question: matchInfo.question }
+          });
+        }
       } catch (e) {
         console.error('[WS] Error processing match:', e);
         setErr('Unexpected error processing match result.');

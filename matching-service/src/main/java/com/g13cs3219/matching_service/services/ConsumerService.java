@@ -40,6 +40,11 @@ public class ConsumerService {
      * @param request the join request containing the user's matching preferences
      */
     private void handleJoinRequest(JoinRequest request) {
+
+        if (request.getEmail() != null) {
+            matchingPool.storeUserEmail(request.getUserId(), request.getEmail());
+        }
+        
         matchingPool
                 .findMatch(request.getUserId(), request.getTopic(), request.getDifficulty(), request.getType())
                 .ifPresentOrElse(

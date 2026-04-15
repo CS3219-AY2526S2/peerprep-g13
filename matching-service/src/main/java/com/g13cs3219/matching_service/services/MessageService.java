@@ -1,23 +1,22 @@
 package com.g13cs3219.matching_service.services;
 
 import java.time.Duration;
-import java.util.concurrent.TimeoutException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g13cs3219.matching_service.dto.requests.QuestionRequest;
 import com.g13cs3219.matching_service.dto.responses.MatchResult;
-import com.g13cs3219.matching_service.dto.responses.QuestionResponse;
-import com.g13cs3219.matching_service.dto.responses.QuestionResponseWrapper;
 
 @Service
 public class MessageService {
@@ -29,10 +28,17 @@ public class MessageService {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final WebClient.Builder webClientBuilder;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper;
 
-    public MessageService(SimpMessagingTemplate messagingTemplate, WebClient.Builder webClientBuilder) {
+    public MessageService(SimpMessagingTemplate messagingTemplate,
+                          WebClient.Builder webClientBuilder,
+                          RedisTemplate<String, String> redisTemplate,
+                          ObjectMapper objectMapper) {
         this.messagingTemplate = messagingTemplate;
         this.webClientBuilder = webClientBuilder;
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -51,17 +57,26 @@ public class MessageService {
 
     /**
      * Send a match found message to both users when a match is found.
+     * Fetches the question from question-service, writes the room entry to Redis,
+     * then notifies both users via STOMP.
      *
-     * @param match The match result containing the user IDs and question ID.
+     * @param match The match result containing the user IDs and question criteria.
      */
     public void sendMatchFoundMessage(MatchResult match) {
         log.info("Sending match found message to users: {} and {}", match.getUserId1(), match.getUserId2());
 
         QuestionRequest request = QuestionRequest.buildQuestionRequest(match.getTopic(), match.getDifficulty());
-        QuestionResponse randomQuestion = getRandomQuestion(request).getQuestion();
+        Long questionId = fetchQuestionId(request);
 
-        match.setQuestion(randomQuestion);
-        log.info("Random question found: {}", randomQuestion);
+        match.setQuestionId(questionId);
+        log.info("Assigned questionId {} to room {}", questionId, match.getRoomId());
+
+        // Look up participant emails from the pool's email index
+        String email1 = redisTemplate.opsForValue().get("user-email:" + match.getUserId1());
+        String email2 = redisTemplate.opsForValue().get("user-email:" + match.getUserId2());
+
+        // Write room entry to Redis once, with all data resolved
+        registerRoom(match, email1, email2);
 
         messagingTemplate.convertAndSendToUser(
             match.getUserId1() + "",
@@ -89,11 +104,35 @@ public class MessageService {
         );
     }
 
-    private QuestionResponseWrapper getRandomQuestion(QuestionRequest request) {
-        QuestionResponseWrapper response = webClientBuilder
+    private void registerRoom(MatchResult match, String email1, String email2) {
+        Map<String, Object> roomData = Map.of(
+            "userId1",    match.getUserId1(),
+            "userId2",    match.getUserId2(),
+            "email1",     email1 != null ? email1 : "",
+            "email2",     email2 != null ? email2 : "",
+            "questionId", match.getQuestionId(),
+            "topic",      match.getTopic(),
+            "difficulty", match.getDifficulty()
+        );
+        try {
+            String json = objectMapper.writeValueAsString(roomData);
+            redisTemplate.opsForValue().set(
+                "room:" + match.getRoomId(),
+                json,
+                3600, TimeUnit.SECONDS
+            );
+            log.info("Registered room {} in Redis for users {} and {}", match.getRoomId(), match.getUserId1(), match.getUserId2());
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize room data for room {}: {}", match.getRoomId(), e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Long fetchQuestionId(QuestionRequest request) {
+        Map<String, Object> response = webClientBuilder
                 .build()
                 .post()
-                .uri(questionServiceURL + "/questions/match")
+                .uri(questionServiceURL + "/questions/match/id")
                 .header("X-Internal-Request", "true")
                 .bodyValue(request)
                 .retrieve()
@@ -101,13 +140,13 @@ public class MessageService {
                         res.bodyToMono(String.class)
                                 .map(body -> new RuntimeException("Error: " + body))
                 )
-                .bodyToMono(QuestionResponseWrapper.class)
-                .timeout(Duration.ofSeconds(3)) // ✅ prevent hanging
+                .bodyToMono(Map.class)
+                .timeout(Duration.ofSeconds(3))
                 .block();
 
-        if (response == null) {
-            throw new RuntimeException("Empty response from question service");
+        if (response == null || !response.containsKey("questionId")) {
+            throw new RuntimeException("Empty or invalid response from question service");
         }
-        return response;
+        return ((Number) response.get("questionId")).longValue();
     }
 }

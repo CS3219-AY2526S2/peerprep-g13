@@ -152,6 +152,8 @@ services:
         condition: service_healthy
       user-service:
         condition: service_started
+      question-service:
+        condition: service_started
     networks:
       - peerprep-net
     restart: unless-stopped
@@ -164,6 +166,11 @@ services:
     environment:
       PORT:       4000
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - peerprep-net
     restart: unless-stopped

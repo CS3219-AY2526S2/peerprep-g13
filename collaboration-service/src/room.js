@@ -74,6 +74,17 @@ export class YjsRoom {
     syncProtocol.writeSyncStep1(syncEncoder, this.doc);
     ws.send(encoding.toUint8Array(syncEncoder));
 
+    // Also push the full doc state immediately so the client doesn't have to
+    // wait for a SyncStep1→SyncStep2 round-trip before seeing room-state data
+    // (e.g. questionId written before this client connected).
+    const fullUpdate = Y.encodeStateAsUpdate(this.doc);
+    if (fullUpdate.length > 2) {
+      const updateEncoder = encoding.createEncoder();
+      encoding.writeVarUint(updateEncoder, MESSAGE_SYNC);
+      syncProtocol.writeUpdate(updateEncoder, fullUpdate);
+      ws.send(encoding.toUint8Array(updateEncoder));
+    }
+
     // Send current awareness states to the new client
     const awarenessStates = this.awareness.getStates();
     if (awarenessStates.size > 0) {

@@ -30,18 +30,6 @@ export default function QuestionDetailPage() {
     load();
   }, [id]);
 
-  function startCollaboration() {
-    const roomId = crypto.randomUUID().slice(0, 8);
-    if (!question) {
-      setError("No question found");
-      return;
-    }
-
-    navigate(`/collaborate/${roomId}`, {
-      state: { question }
-    });
-  }
-  
   async function handleDelete() {
     setDeleting(true);
     try {
@@ -82,9 +70,6 @@ export default function QuestionDetailPage() {
         <div className={styles.topBar}>
           <button className={styles.backBtn} onClick={() => navigate("/questions")}>
             ← Back to Questions
-          </button>
-          <button className={styles.collaborateBtn} onClick={startCollaboration}>
-            Collaborate
           </button>
         </div>
 

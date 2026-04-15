@@ -2,6 +2,8 @@ package com.g13cs3219.matching_service.repositories;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -24,6 +26,7 @@ public class MatchingPool {
 
     /**
      * Add a user to the matching pool based on the provided join request.
+     * Also stores the user's email keyed by userId for room registration lookup.
      */
     public void addUser(JoinRequest request) {
         String key = buildKey(request.getTopic(), request.getDifficulty());
@@ -32,6 +35,13 @@ public class MatchingPool {
                 String.valueOf(request.getUserId()),
                 System.currentTimeMillis()
         );
+        if (request.getEmail() != null) {
+            redisTemplate.opsForValue().set(
+                    "user-email:" + request.getUserId(),
+                    request.getEmail(),
+                    7200, TimeUnit.SECONDS
+            );
+        }
     }
 
     /**
@@ -41,6 +51,7 @@ public class MatchingPool {
         String key = buildKey(request.getTopic(), request.getDifficulty());
         messageService.sendCancelMessage(String.valueOf(request.getUserId()));
         redisTemplate.opsForZSet().remove(key, String.valueOf(request.getUserId()));
+        redisTemplate.delete("user-email:" + request.getUserId());
     }
 
     /**
@@ -83,22 +94,23 @@ public class MatchingPool {
      */
     public void handleTimeouts(double currentTime) {
         ScanOptions options = ScanOptions.scanOptions().match("queue:*").count(100).build();
-        Cursor<byte[]> cursor = redisTemplate.getConnectionFactory().getConnection().scan(options);
-        while (cursor.hasNext()) {
-            String key = new String(cursor.next());
-            Set<ZSetOperations.TypedTuple<String>> timedOutUsers = redisTemplate
-                    .opsForZSet()
-                    .rangeByScoreWithScores(key, 0, currentTime - 30000);
+        try (Cursor<byte[]> cursor = redisTemplate.getConnectionFactory().getConnection().scan(options)) {
+            while (cursor.hasNext()) {
+                String key = new String(cursor.next());
+                Set<ZSetOperations.TypedTuple<String>> timedOutUsers = redisTemplate
+                        .opsForZSet()
+                        .rangeByScoreWithScores(key, 0, currentTime - 30000);
 
-            if (timedOutUsers != null) {
-                for (ZSetOperations.TypedTuple<String> user : timedOutUsers) {
-                    String userId = user.getValue();
-                    messageService.sendTimeoutMessage(userId);
-                    redisTemplate.opsForZSet().remove(key, userId);
+                if (timedOutUsers != null) {
+                    for (ZSetOperations.TypedTuple<String> user : timedOutUsers) {
+                        String userId = user.getValue();
+                        messageService.sendTimeoutMessage(userId);
+                        redisTemplate.opsForZSet().remove(key, userId);
+                        redisTemplate.delete("user-email:" + userId);
+                    }
                 }
             }
         }
-        cursor.close();
     }
 
     private Optional<MatchResult> findExactMatch(Long userId, String key) {
@@ -111,11 +123,13 @@ public class MatchingPool {
         if (match == null) return Optional.empty();
 
         redisTemplate.opsForZSet().remove(key, match);
+        String[] parts = key.split(":");
         return Optional.of(MatchResult.builder()
                 .userId1(userId)
-                .userId2(Long.parseLong(match))
-                .topic(key.split(":")[1])
-                .difficulty(key.split(":")[2])
+                .userId2(Long.valueOf(match))
+                .topic(parts[1])
+                .difficulty(parts[2])
+                .roomId(UUID.randomUUID().toString())
                 .build()
         );
     }
@@ -124,16 +138,13 @@ public class MatchingPool {
         if (difficulty == null) return Optional.empty();
 
         ScanOptions options = ScanOptions.scanOptions().match("queue:*:" + difficulty).count(100).build();
-        Cursor<byte[]> cursor = redisTemplate.getConnectionFactory().getConnection().scan(options);
         Optional<MatchResult> result = Optional.empty();
-        try {
+        try (Cursor<byte[]> cursor = redisTemplate.getConnectionFactory().getConnection().scan(options)) {
             while (cursor.hasNext()) {
                 String key = new String(cursor.next());
                 result = findExactMatch(userId, key);
                 if (result.isPresent()) break;
             }
-        } finally {
-            cursor.close();
         }
         return result;
     }
@@ -155,5 +166,13 @@ public class MatchingPool {
             throw new IllegalArgumentException("topic and difficulty cannot be null");
         }
         return "queue:" + topic.trim().toLowerCase() + ":" + difficulty.trim().toLowerCase();
+    }
+
+    public void storeUserEmail(Long userId, String email) {
+        redisTemplate.opsForValue().set(
+            "user-email:" + userId,
+            email,
+            7200, TimeUnit.SECONDS
+        );
     }
 }
