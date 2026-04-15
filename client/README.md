@@ -58,7 +58,7 @@ App runs at `http://localhost:5173`.
 
 All API calls go through `src/api/`:
 
-- `axios.js` — Axios instance with base URL and Bearer token interceptor
+- `axios.js` — Axios instance with base URL and Bearer token interceptor.
 - `question.js` — Question CRUD + match endpoint.
 - `user.js` — Auth (register, login, logout) and dashboard.
 
