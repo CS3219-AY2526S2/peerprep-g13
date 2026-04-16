@@ -2,6 +2,7 @@ package com.g13cs3219.userservice.dto.responses;
 
 import com.g13cs3219.userservice.model.User;
 import lombok.*;
+import java.util.Date;
 import java.util.List;
 
 @Data @Builder
@@ -13,6 +14,8 @@ public class UserDashboardResponse {
     private String avatarUrl;
     private String preferredLanguage;
     private List<String> preferredTopic;
+    private Date createdAt;
+    private Date updatedAt;
 
     public static UserDashboardResponse from(User user) {
         return UserDashboardResponse.builder()
@@ -23,6 +26,8 @@ public class UserDashboardResponse {
                 .avatarUrl(user.getAvatarUrl())
                 .preferredLanguage(user.getPreferredLanguage())
                 .preferredTopic(user.getPreferredTopic())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .build();
     }
 }
